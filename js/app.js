@@ -96,17 +96,32 @@ document.addEventListener('alpine:init', () => {
     },
 
     loadStorage() {
+      // Auto-purge legacy fake cached data from browser LocalStorage
+      if (!localStorage.getItem('9achech_v3_real_stats')) {
+        localStorage.removeItem('9achech_products');
+        localStorage.removeItem('9achech_users');
+        localStorage.setItem('9achech_v3_real_stats', 'true');
+      }
+
       // Products
       const storedProducts = localStorage.getItem('9achech_products');
       if (storedProducts) {
         try {
           this.products = JSON.parse(storedProducts);
         } catch (e) {
-          this.products = DEFAULT_PRODUCTS;
+          this.products = JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
         }
       } else {
-        this.products = DEFAULT_PRODUCTS;
+        this.products = JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
       }
+
+      // Ensure no legacy product counts remain
+      this.products.forEach(p => {
+        if (!storedProducts) {
+          p.wishlistCount = 0;
+          p.cartCount = 0;
+        }
+      });
 
       // Cart
       const storedCart = localStorage.getItem('9achech_cart');
@@ -122,10 +137,10 @@ document.addEventListener('alpine:init', () => {
         try {
           this.users = JSON.parse(storedUsers);
         } catch (e) {
-          this.users = DEFAULT_USERS;
+          this.users = [];
         }
       } else {
-        this.users = DEFAULT_USERS;
+        this.users = [];
       }
 
       // Current User & Admin Session
@@ -315,6 +330,16 @@ document.addEventListener('alpine:init', () => {
 
     getWishlistProducts() {
       return this.products.filter(p => this.wishlist.includes(p.id));
+    },
+
+    totalWishlistLikes() {
+      let total = this.wishlist.length;
+      this.users.forEach(u => {
+        if (u.wishlist && Array.isArray(u.wishlist)) {
+          total += u.wishlist.length;
+        }
+      });
+      return total;
     },
 
     // --- AUTHENTICATION ---
