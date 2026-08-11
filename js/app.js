@@ -80,6 +80,10 @@ document.addEventListener('alpine:init', () => {
     init() {
       this.loadStorage();
 
+      // Start Real-Time Multi-Device Cloud Sync (PC ↔ Mobile)
+      this.syncWithCloud();
+      setInterval(() => this.syncWithCloud(), 8000);
+
       // Sync active cart & wishlist size selections
       this.$watch('cart', () => this.saveStorage());
       this.$watch('wishlist', () => this.saveStorage());
@@ -178,7 +182,7 @@ document.addEventListener('alpine:init', () => {
       }
     },
 
-    saveStorage() {
+    saveStorage(triggerCloudPush = true) {
       localStorage.setItem('9achech_products', JSON.stringify(this.products));
       localStorage.setItem('9achech_cart', JSON.stringify(this.cart));
       localStorage.setItem('9achech_wishlist', JSON.stringify(this.wishlist));
@@ -186,6 +190,128 @@ document.addEventListener('alpine:init', () => {
       localStorage.setItem('9achech_users', JSON.stringify(this.users));
       localStorage.setItem('9achech_currentUser', JSON.stringify(this.currentUser));
       localStorage.setItem('9achech_settings', JSON.stringify(this.settings));
+
+      if (triggerCloudPush) {
+        this.pushToCloud();
+      }
+    },
+
+    // --- MULTI-DEVICE REAL-TIME CLOUD SYNC & BACKUP ---
+    async syncWithCloud(showToastNotice = false) {
+      try {
+        const cloudUrl = 'https://kvdb.io/9achech_store_v1/cloud_db';
+        const response = await fetch(cloudUrl);
+        if (response.ok) {
+          const cloudData = await response.json();
+          if (cloudData && typeof cloudData === 'object') {
+            // Merge users (unique by id/username)
+            if (Array.isArray(cloudData.users)) {
+              const existingUserIds = new Set(this.users.map(u => u.id || u.username));
+              cloudData.users.forEach(u => {
+                if (!existingUserIds.has(u.id || u.username)) {
+                  this.users.push(u);
+                }
+              });
+            }
+
+            // Merge orders (unique by id)
+            if (Array.isArray(cloudData.orders)) {
+              const existingOrderIds = new Set(this.orders.map(o => o.id));
+              cloudData.orders.forEach(o => {
+                if (!existingOrderIds.has(o.id)) {
+                  this.orders.unshift(o);
+                } else {
+                  const localOrd = this.orders.find(localO => localO.id === o.id);
+                  if (localOrd && localOrd.status !== o.status) {
+                    localOrd.status = o.status;
+                  }
+                }
+              });
+            }
+
+            // Sync product stocks
+            if (Array.isArray(cloudData.products)) {
+              cloudData.products.forEach(cloudP => {
+                const localP = this.products.find(p => p.id === cloudP.id);
+                if (localP) {
+                  if (cloudP.stockQuantity !== undefined) localP.stockQuantity = cloudP.stockQuantity;
+                  if (cloudP.inStock !== undefined) localP.inStock = cloudP.inStock;
+                  if (cloudP.wishlistCount !== undefined) localP.wishlistCount = cloudP.wishlistCount;
+                }
+              });
+            }
+
+            this.saveStorage(false);
+            if (showToastNotice) {
+              this.showToast("Synchronisation Cloud réussie (PC ↔ Mobile) ☁️", "success");
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Cloud sync offline fallback to LocalStorage", err);
+      }
+    },
+
+    async pushToCloud() {
+      try {
+        const cloudUrl = 'https://kvdb.io/9achech_store_v1/cloud_db';
+        const payload = {
+          products: this.products,
+          users: this.users,
+          orders: this.orders,
+          settings: this.settings,
+          lastSync: new Date().toISOString()
+        };
+        await fetch(cloudUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } catch (err) {
+        console.warn("Cloud push offline fallback", err);
+      }
+    },
+
+    exportDataJSON() {
+      const data = {
+        products: this.products,
+        users: this.users,
+        orders: this.orders,
+        settings: this.settings,
+        exportDate: new Date().toISOString()
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `9achech_backup_${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      this.showToast("Sauvegarde JSON téléchargée !", "success");
+    },
+
+    importDataJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (imported.products) this.products = imported.products;
+          if (imported.users) this.users = imported.users;
+          if (imported.orders) this.orders = imported.orders;
+          if (imported.settings) this.settings = imported.settings;
+          this.saveStorage();
+          this.showToast("Données importées avec succès !", "success");
+          if (this.isAdminMode) {
+            this.$nextTick(() => this.renderAdminCharts());
+          }
+        } catch (err) {
+          this.showToast("Fichier JSON invalide", "error");
+        }
+      };
+      reader.readAsText(file);
     },
 
     resetToDefaultData() {
