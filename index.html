@@ -88,7 +88,7 @@
           </template>
 
           <!-- WISHLIST BUTTON -->
-          <button @click="isWishlistOpen = true" 
+          <button x-show="currentUser" @click="isWishlistOpen = true" 
                   class="relative p-2.5 rounded-xl glass-button-secondary hover:border-pink-500/50 hover:text-pink-400 transition-all duration-300">
             <i class="fa-solid fa-heart text-lg"></i>
             <span x-show="wishlist.length > 0" 
@@ -98,7 +98,7 @@
           </button>
 
           <!-- CART (PANIER) BUTTON -->
-          <button @click="isCartOpen = true" 
+          <button x-show="currentUser" @click="isCartOpen = true" 
                   class="relative p-2.5 rounded-xl glass-button hover:shadow-purple-500/50 transition-all duration-300 flex items-center space-x-2">
             <i class="fa-solid fa-basket-shopping text-lg"></i>
             <span class="hidden sm:inline text-xs font-bold" x-text="cartFinalTotal().toFixed(2) + ' DT'"></span>
@@ -161,8 +161,85 @@
   <!-- ==================== MAIN CONTENT AREA ==================== -->
   <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <!-- STOREFRONT VIEW -->
-    <div x-show="!isAdminMode" x-cloak>
+    <!-- MANDATORY LOGIN ACCESS GATE (UNAUTHENTICATED VISITORS) -->
+    <div x-show="!currentUser" x-cloak class="my-12 flex items-center justify-center">
+      <div class="w-full max-w-lg glass-panel p-8 sm:p-10 rounded-3xl border border-white/20 shadow-2xl text-center relative overflow-hidden">
+        <div class="absolute -right-10 -top-10 w-48 h-48 bg-gradient-to-br from-purple-600/30 to-pink-500/30 rounded-full blur-2xl pointer-events-none"></div>
+
+        <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-tr from-purple-600 via-pink-500 to-cyan-400 p-0.5 shadow-xl flex items-center justify-center">
+          <div class="w-full h-full bg-slate-950/80 rounded-[14px] flex items-center justify-center">
+            <i class="fa-solid fa-lock text-2xl text-purple-400"></i>
+          </div>
+        </div>
+
+        <h2 class="text-2xl font-extrabold text-white mb-2">Accès Privé 9ACHECH</h2>
+        <p class="text-xs text-slate-300 mb-6 leading-relaxed">
+          Veuillez vous connecter ou créer un compte pour accéder au catalogue de produits, prix et recharges telecom.
+        </p>
+
+        <!-- Auth Tabs inside Gate -->
+        <div class="flex space-x-2 border-b border-white/10 mb-6">
+          <button @click="authTab = 'login'" 
+                  class="flex-1 py-2.5 text-xs font-bold border-b-2 transition-all duration-200"
+                  :class="authTab === 'login' ? 'border-purple-500 text-purple-400' : 'border-transparent text-slate-400 hover:text-white'">
+            Se Connecter
+          </button>
+          <button @click="authTab = 'signup'" 
+                  class="flex-1 py-2.5 text-xs font-bold border-b-2 transition-all duration-200"
+                  :class="authTab === 'signup' ? 'border-purple-500 text-purple-400' : 'border-transparent text-slate-400 hover:text-white'">
+            Créer un Compte
+          </button>
+        </div>
+
+        <!-- LOGIN FORM inside Gate -->
+        <form x-show="authTab === 'login'" @submit.prevent="handleLogin()" class="space-y-4 text-xs text-left">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Nom d'utilisateur ou E-mail</label>
+            <input type="text" x-model="loginForm.username" required placeholder="Votre nom d'utilisateur" class="w-full glass-input px-3.5 py-2.5 rounded-xl">
+          </div>
+
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Mot de passe</label>
+            <input type="password" x-model="loginForm.password" required placeholder="••••••••" class="w-full glass-input px-3.5 py-2.5 rounded-xl">
+          </div>
+
+          <button type="submit" class="w-full py-3.5 rounded-2xl glass-button text-xs font-bold shadow-lg shadow-purple-500/25">
+            Se Connecter & Accéder au Catalogue
+          </button>
+        </form>
+
+        <!-- SIGNUP FORM inside Gate -->
+        <form x-show="authTab === 'signup'" @submit.prevent="handleSignup()" class="space-y-4 text-xs text-left">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Nom Complet</label>
+            <input type="text" x-model="signupForm.name" required placeholder="ex: Ahmed Ben Salem" class="w-full glass-input px-3.5 py-2.5 rounded-xl">
+          </div>
+
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Nom d'utilisateur</label>
+            <input type="text" x-model="signupForm.username" required placeholder="ex: ahmed_bs" class="w-full glass-input px-3.5 py-2.5 rounded-xl">
+          </div>
+
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Adresse E-mail</label>
+            <input type="email" x-model="signupForm.email" required placeholder="ahmed@example.com" class="w-full glass-input px-3.5 py-2.5 rounded-xl">
+          </div>
+
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Mot de passe</label>
+            <input type="password" x-model="signupForm.password" required placeholder="••••••••" class="w-full glass-input px-3.5 py-2.5 rounded-xl">
+          </div>
+
+          <button type="submit" class="w-full py-3.5 rounded-2xl glass-button text-xs font-bold shadow-lg shadow-purple-500/25">
+            Créer un Compte & Accéder
+          </button>
+        </form>
+
+      </div>
+    </div>
+
+    <!-- STOREFRONT VIEW (AUTHENTICATED USERS ONLY) -->
+    <div x-show="currentUser && !isAdminMode" x-cloak>
       
       <!-- HERO BANNER -->
       <section class="relative mb-12 rounded-3xl glass-panel p-8 sm:p-12 overflow-hidden border border-white/10">
@@ -985,10 +1062,7 @@
           <input type="password" x-model="loginForm.password" required placeholder="••••••••" class="w-full glass-input px-3.5 py-2.5 rounded-xl">
         </div>
 
-        <div class="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-[11px] text-purple-300">
-          <p class="font-bold mb-0.5">Accès Administrateur par défaut:</p>
-          <p>Login: <code class="text-white">ghassen</code> | Pass: <code class="text-white">azeqsdwxcgg99</code></p>
-        </div>
+
 
         <button type="submit" class="w-full py-3 rounded-2xl glass-button text-xs font-bold">
           Se Connecter

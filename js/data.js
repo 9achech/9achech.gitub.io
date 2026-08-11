@@ -2,7 +2,7 @@
 
 const DEFAULT_ADMIN = {
   username: "ghassen",
-  password: "azeqsdwxcgg99",
+  password: "Azeqsdwxcgg99",
   role: "admin",
   name: "Ghassen Admin"
 };
