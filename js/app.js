@@ -699,14 +699,43 @@ document.addEventListener('alpine:init', () => {
       }
     },
 
+    deleteOrder(orderId) {
+      if (confirm("Êtes-vous sûr de vouloir supprimer cette commande ?")) {
+        this.orders = this.orders.filter(o => o.id !== orderId);
+        this.showToast("Commande supprimée de la liste", "info");
+        this.saveStorage();
+      }
+    },
+
+    getMostLikedProducts() {
+      const counts = {};
+      // Calculate real likes from user wishlists
+      this.users.forEach(u => {
+        if (u.wishlist && Array.isArray(u.wishlist)) {
+          u.wishlist.forEach(id => {
+            counts[id] = (counts[id] || 0) + 1;
+          });
+        }
+      });
+      // Calculate real likes from active session wishlist
+      this.wishlist.forEach(id => {
+        counts[id] = (counts[id] || 0) + 1;
+      });
+
+      return this.products
+        .map(p => ({
+          ...p,
+          realLikes: counts[p.id] || p.wishlistCount || 0
+        }))
+        .sort((a, b) => b.realLikes - a.realLikes);
+    },
+
     // --- CHART.JS ADMIN DASHBOARD RENDERER ---
     renderAdminCharts() {
       if (typeof Chart === 'undefined') return;
 
-      // Top Wishlist Items Chart
-      const topWishlist = [...this.products]
-        .sort((a, b) => (b.wishlistCount || 0) - (a.wishlistCount || 0))
-        .slice(0, 5);
+      // Top Real Wishlist Items Chart
+      const topWishlist = this.getMostLikedProducts().slice(0, 5);
 
       const ctx1 = document.getElementById('chartWishlist');
       if (ctx1) {
@@ -716,8 +745,8 @@ document.addEventListener('alpine:init', () => {
           data: {
             labels: topWishlist.map(p => p.title.substring(0, 15) + '...'),
             datasets: [{
-              label: 'Ajouts Favoris',
-              data: topWishlist.map(p => p.wishlistCount || 0),
+              label: 'Nombre de Likes ❤️',
+              data: topWishlist.map(p => p.realLikes),
               backgroundColor: 'rgba(236, 72, 153, 0.75)',
               borderColor: '#ec4899',
               borderWidth: 1,
@@ -732,7 +761,7 @@ document.addEventListener('alpine:init', () => {
             },
             scales: {
               x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-              y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+              y: { ticks: { color: '#94a3b8', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' } }
             }
           }
         });
