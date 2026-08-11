@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="fr" x-data="app()" x-init="init()">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>9achech | Boutique E-Commerce Glassmorphism & Connexion Express</title>
+  <meta name="description" content="Découvrez 9achech: Vêtements Streetwear, Accessoires de mode, Décoration tendance et Recharges Connexion Orange / Ooredoo avec livraison rapide.">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Custom Glassmorphism Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Alpine.js CDN -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  
+  <!-- Data & Logic Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</head>
+<body class="relative min-h-screen text-slate-100 flex flex-col justify-between selection:bg-purple-500 selection:text-white">
+
+  <!-- Animated Multi-Colored Canvas & Floating Blur Orbs -->
+  <div class="bg-ambient-canvas"></div>
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="bg-orb bg-orb-3"></div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div class="fixed top-24 right-5 z-50 flex flex-col space-y-3 pointer-events-none" x-show="toast.show" x-transition:enter="toast-enter" x-cloak>
+    <div class="pointer-events-auto px-5 py-3.5 rounded-2xl glass-panel border border-white/20 shadow-2xl flex items-center space-x-3 text-sm font-semibold"
+         :class="toast.type === 'error' ? 'text-rose-400 border-rose-500/40' : (toast.type === 'info' ? 'text-cyan-400 border-cyan-500/40' : 'text-emerald-400 border-emerald-500/40')">
+      <i class="fa-solid" :class="toast.type === 'error' ? 'fa-triangle-exclamation' : (toast.type === 'info' ? 'fa-circle-info' : 'fa-circle-check')"></i>
+      <span x-text="toast.message"></span>
+    </div>
+  </div>
+
+  <!-- ==================== HEADER & NAVBAR ==================== -->
+  <header class="sticky top-0 z-40 glass-header">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
+        
+        <!-- BRAND LOGO -->
+        <div class="flex items-center space-x-3 cursor-pointer" @click="isAdminMode = false; activeCategory = 'All'">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 via-pink-500 to-cyan-400 p-0.5 shadow-lg shadow-purple-500/30 flex items-center justify-center transform hover:scale-105 transition-all duration-300">
+            <div class="w-full h-full bg-slate-950/80 rounded-[14px] flex items-center justify-center">
+              <i class="fa-solid fa-bag-shopping text-xl text-purple-400"></i>
+            </div>
+          </div>
+          <div>
+            <span class="text-2xl font-extrabold tracking-wider bg-gradient-to-r from-white via-purple-200 to-pink-400 bg-clip-text text-transparent">9ACHECH</span>
+            <span class="block text-[10px] tracking-widest text-cyan-400 font-semibold uppercase">Store & Express</span>
+          </div>
+        </div>
+
+        <!-- SEARCH BAR (DESKTOP) -->
+        <div class="hidden md:flex flex-1 max-w-md mx-8">
+          <div class="relative w-full">
+            <input type="text" 
+                   x-model="searchQuery" 
+                   placeholder="Rechercher vêtements, accessoires, recharges..." 
+                   class="w-full pl-11 pr-4 py-2.5 rounded-full glass-input text-sm placeholder-slate-400 focus:ring-2 focus:ring-purple-500">
+            <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400 text-sm"></i>
+            <button x-show="searchQuery" @click="searchQuery = ''" class="absolute right-3 top-3 text-slate-400 hover:text-white text-xs">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- USER & ACTION BUTTONS -->
+        <div class="flex items-center space-x-3">
+          
+          <!-- ADMIN DASHBOARD QUICK TOGGLE BUTTON (If logged in as admin) -->
+          <template x-if="currentUser && currentUser.role === 'admin'">
+            <button @click="isAdminMode = !isAdminMode" 
+                    class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-300 flex items-center space-x-2 border border-purple-500/40 shadow-lg"
+                    :class="isAdminMode ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'glass-button-secondary text-purple-300'">
+              <i class="fa-solid fa-user-shield"></i>
+              <span class="hidden sm:inline" x-text="isAdminMode ? 'Mode Boutique' : 'Admin Dashboard'"></span>
+            </button>
+          </template>
+
+          <!-- WISHLIST BUTTON -->
+          <button @click="isWishlistOpen = true" 
+                  class="relative p-2.5 rounded-xl glass-button-secondary hover:border-pink-500/50 hover:text-pink-400 transition-all duration-300">
+            <i class="fa-solid fa-heart text-lg"></i>
+            <span x-show="wishlist.length > 0" 
+                  x-text="wishlist.length" 
+                  class="absolute -top-1.5 -right-1.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border border-slate-900 shadow-md">
+            </span>
+          </button>
+
+          <!-- CART (PANIER) BUTTON -->
+          <button @click="isCartOpen = true" 
+                  class="relative p-2.5 rounded-xl glass-button hover:shadow-purple-500/50 transition-all duration-300 flex items-center space-x-2">
+            <i class="fa-solid fa-basket-shopping text-lg"></i>
+            <span class="hidden sm:inline text-xs font-bold" x-text="cartFinalTotal().toFixed(2) + ' DT'"></span>
+            <span x-show="cartCount() > 0" 
+                  x-text="cartCount()" 
+                  class="bg-cyan-400 text-slate-950 text-[11px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg">
+            </span>
+          </button>
+
+          <!-- AUTH / ACCOUNT BUTTON -->
+          <div class="relative" x-data="{ open: false }">
+            <button @click="currentUser ? open = !open : isAuthOpen = true" 
+                    class="p-2.5 rounded-xl glass-button-secondary hover:border-purple-500/50 transition-all duration-300 flex items-center space-x-2">
+              <i class="fa-solid" :class="currentUser ? 'fa-user-check text-emerald-400' : 'fa-user'"></i>
+              <span class="hidden md:inline text-xs font-semibold" x-text="currentUser ? currentUser.name.split(' ')[0] : 'Connexion'"></span>
+            </button>
+
+            <!-- User Dropdown Menu -->
+            <div x-show="open" @click.away="open = false" x-cloak
+                 class="absolute right-0 mt-3 w-56 rounded-2xl glass-modal py-2 z-50 border border-white/10 shadow-2xl">
+              <div class="px-4 py-2 border-b border-white/10">
+                <p class="text-xs text-slate-400">Connecté en tant que</p>
+                <p class="text-sm font-bold text-white truncate" x-text="currentUser?.name"></p>
+                <span class="inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 uppercase font-semibold"
+                      x-text="currentUser?.role"></span>
+              </div>
+
+              <template x-if="currentUser?.role === 'admin'">
+                <button @click="isAdminMode = true; open = false" class="w-full text-left px-4 py-2.5 text-xs text-purple-300 hover:bg-white/5 flex items-center space-x-2">
+                  <i class="fa-solid fa-gauge-high"></i>
+                  <span>Tableau de Bord Admin</span>
+                </button>
+              </template>
+
+              <button @click="logout(); open = false" class="w-full text-left px-4 py-2.5 text-xs text-rose-400 hover:bg-white/5 flex items-center space-x-2">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Se déconnecter</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- MOBILE SEARCH BAR -->
+      <div class="pb-4 md:hidden">
+        <div class="relative w-full">
+          <input type="text" 
+                 x-model="searchQuery" 
+                 placeholder="Rechercher un produit..." 
+                 class="w-full pl-10 pr-4 py-2 rounded-xl glass-input text-xs">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ==================== MAIN CONTENT AREA ==================== -->
+  <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- STOREFRONT VIEW -->
+    <div x-show="!isAdminMode" x-cloak>
+      
+      <!-- HERO BANNER -->
+      <section class="relative mb-12 rounded-3xl glass-panel p-8 sm:p-12 overflow-hidden border border-white/10">
+        <div class="absolute -right-10 -bottom-10 w-96 h-96 bg-gradient-to-br from-purple-600/30 via-pink-500/20 to-cyan-400/20 rounded-full blur-3xl pointer-events-none"></div>
+        
+        <div class="relative z-10 max-w-2xl">
+          <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-500/30 text-purple-300 text-xs font-semibold mb-4">
+            <i class="fa-solid fa-bolt text-yellow-400 animate-pulse"></i>
+            <span>Nouvelle Collection & Service Telecom 24/7</span>
+          </div>
+
+          <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight mb-4">
+            L'Excellence Style, Tech & <span class="bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">Connexion Express</span>
+          </h1>
+
+          <p class="text-slate-300 text-sm sm:text-base mb-8 leading-relaxed">
+            Commandez vos vêtements streetwear, accessoires cyberpunk, éléments de décoration tendance et cartes de recharge Orange / Ooredoo directement avec validation instantanée WhatsApp.
+          </p>
+
+          <div class="flex flex-wrap gap-4 items-center">
+            <button @click="document.getElementById('catalog-section').scrollIntoView({ behavior: 'smooth' })" 
+                    class="px-6 py-3.5 rounded-2xl glass-button text-sm font-bold flex items-center space-x-2">
+              <span>Explorer la Boutique</span>
+              <i class="fa-solid fa-arrow-right"></i>
+            </button>
+            <button @click="activeCategory = 'Connexion Orange / Ooredoo'; document.getElementById('catalog-section').scrollIntoView({ behavior: 'smooth' })" 
+                    class="px-6 py-3.5 rounded-2xl glass-button-secondary text-sm font-semibold flex items-center space-x-2 border border-amber-500/30 text-amber-300">
+              <i class="fa-solid fa-wifi text-amber-400"></i>
+              <span>Recharges Telecom</span>
+            </button>
+          </div>
+
+          <!-- Feature Badges -->
+          <div class="grid grid-cols-3 gap-4 mt-10 pt-8 border-t border-white/10 text-center sm:text-left">
+            <div>
+              <p class="text-xs text-slate-400 font-medium">Livraison Rapide</p>
+              <p class="text-sm font-bold text-white">24h à 48h en Tunisie</p>
+            </div>
+            <div>
+              <p class="text-xs text-slate-400 font-medium">Commande Simple</p>
+              <p class="text-sm font-bold text-emerald-400">Direct via WhatsApp</p>
+            </div>
+            <div>
+              <p class="text-xs text-slate-400 font-medium">Recharges Express</p>
+              <p class="text-sm font-bold text-cyan-400">Orange & Ooredoo</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CATALOG & FILTERS SECTION -->
+      <section id="catalog-section" class="scroll-mt-28">
+        
+        <!-- CATEGORY TABS & FILTER BAR -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+          
+          <!-- Category Pills -->
+          <div class="flex items-center space-x-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
+            <template x-for="cat in categories" :key="cat">
+              <button @click="activeCategory = cat"
+                      class="px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-300 border"
+                      :class="activeCategory === cat ? 'bg-gradient-to-r from-purple-600 to-pink-600 border-purple-400/50 text-white shadow-lg shadow-purple-500/25' : 'glass-button-secondary border-white/10 text-slate-300 hover:text-white'">
+                <span x-text="cat === 'Clowth' ? '👕 Vêtements' : (cat === 'Accessoires' ? '👓 Accessoires' : (cat === 'Décoration' ? '🏺 Décoration' : (cat.includes('Connexion') ? '📱 Connexion Orange / Ooredoo' : '✨ Tous les produits')))"></span>
+              </button>
+            </template>
+          </div>
+
+          <!-- Secondary Filters Dropdown -->
+          <div class="flex items-center space-x-3">
+            <select x-model="priceFilter" class="glass-input rounded-xl px-3 py-2 text-xs focus:ring-0">
+              <option value="all" class="bg-slate-900 text-slate-100">Tous les prix</option>
+              <option value="under50" class="bg-slate-900 text-slate-100">Moins de 50 DT</option>
+              <option value="50to100" class="bg-slate-900 text-slate-100">50 DT - 100 DT</option>
+              <option value="over100" class="bg-slate-900 text-slate-100">Plus de 100 DT</option>
+            </select>
+
+            <select x-model="sortBy" class="glass-input rounded-xl px-3 py-2 text-xs focus:ring-0">
+              <option value="default" class="bg-slate-900 text-slate-100">Trier: Par défaut</option>
+              <option value="price-asc" class="bg-slate-900 text-slate-100">Prix: Moins cher</option>
+              <option value="price-desc" class="bg-slate-900 text-slate-100">Prix: Plus cher</option>
+              <option value="popular" class="bg-slate-900 text-slate-100">Les plus populaires</option>
+            </select>
+          </div>
+
+        </div>
+
+        <!-- PRODUCTS GRID -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          
+          <template x-for="product in filteredProducts()" :key="product.id">
+            <div class="glass-card flex flex-col justify-between group">
+              
+              <!-- Card Header / Image Container -->
+              <div class="relative w-full h-56 overflow-hidden rounded-t-2xl bg-slate-950/40">
+                <img :src="product.image" :alt="product.title" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                
+                <!-- Category Badge -->
+                <span class="absolute top-3 left-3 text-[10px] font-bold px-2.5 py-1 rounded-full text-white uppercase tracking-wider shadow-md"
+                      :class="getBadgeClass(product.category)"
+                      x-text="product.category">
+                </span>
+
+                <!-- Discount Tag if sale -->
+                <template x-if="product.originalPrice > product.price">
+                  <span class="absolute top-3 right-12 badge-sale text-[10px] font-black px-2 py-0.5 rounded-full text-white shadow-md">
+                    <span x-text="'-' + Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) + '%'"></span>
+                  </span>
+                </template>
+
+                <!-- Wishlist Heart Toggle Button -->
+                <button @click="toggleWishlist(product.id)" 
+                        class="absolute top-3 right-3 w-8 h-8 rounded-full glass-panel flex items-center justify-center text-xs transition-all duration-300"
+                        :class="isInWishlist(product.id) ? 'text-pink-500 bg-pink-500/20 border-pink-500/50' : 'text-slate-300 hover:text-pink-400'">
+                  <i class="fa-solid fa-heart"></i>
+                </button>
+
+                <!-- Quick View Overlay Button -->
+                <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                  <button @click="openProductModal(product)" class="px-4 py-2 rounded-xl glass-button text-xs font-semibold">
+                    <i class="fa-solid fa-eye mr-1.5"></i> Aperçu Rapide
+                  </button>
+                </div>
+              </div>
+
+              <!-- Card Content -->
+              <div class="p-5 flex-grow flex flex-col justify-between">
+                <div>
+                  <h3 class="font-bold text-sm text-slate-100 line-clamp-1 mb-1 group-hover:text-purple-300 transition-colors" x-text="product.title"></h3>
+                  <p class="text-xs text-slate-400 line-clamp-2 mb-3 leading-relaxed" x-text="product.description"></p>
+                  
+                  <!-- Size Pills preview if clothes -->
+                  <template x-if="product.sizes && product.sizes.length > 0">
+                    <div class="flex items-center space-x-1 mb-3">
+                      <span class="text-[10px] text-slate-400 font-semibold mr-1">Tailles:</span>
+                      <template x-for="sz in product.sizes" :key="sz">
+                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-slate-300" x-text="sz"></span>
+                      </template>
+                    </div>
+                  </template>
+                </div>
+
+                <!-- Price & Action Button -->
+                <div class="pt-3 border-t border-white/10 flex items-center justify-between mt-2">
+                  <div>
+                    <template x-if="product.originalPrice > product.price">
+                      <span class="block text-[11px] text-slate-400 line-through" x-text="product.originalPrice.toFixed(2) + ' DT'"></span>
+                    </template>
+                    <span class="text-base font-extrabold text-white text-glow-purple" x-text="product.price.toFixed(2) + ' DT'"></span>
+                  </div>
+
+                  <button @click="addToCart(product)" 
+                          class="px-3.5 py-2 rounded-xl glass-button text-xs font-semibold flex items-center space-x-1.5">
+                    <i class="fa-solid fa-cart-plus"></i>
+                    <span>Ajouter</span>
+                  </button>
+                </div>
+
+              </div>
+
+            </div>
+          </template>
+
+        </div>
+
+        <!-- EMPTY STATE IF NO PRODUCTS MATCH -->
+        <div x-show="filteredProducts().length === 0" class="py-16 text-center glass-panel rounded-3xl my-8">
+          <i class="fa-solid fa-box-open text-5xl text-purple-400/50 mb-4"></i>
+          <h3 class="text-lg font-bold text-white mb-1">Aucun produit trouvé</h3>
+          <p class="text-xs text-slate-400">Essayez de modifier vos critères de recherche ou de filtre.</p>
+          <button @click="searchQuery = ''; activeCategory = 'All'; priceFilter = 'all'" class="mt-4 px-4 py-2 rounded-xl glass-button-secondary text-xs">
+            Réinitialiser les filtres
+          </button>
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- ==================== ADMIN DASHBOARD VIEW ==================== -->
+    <div x-show="isAdminMode" x-cloak>
+      
+      <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 glass-panel p-6 rounded-3xl border-purple-500/30">
+        <div>
+          <div class="inline-flex items-center space-x-2 text-xs text-purple-400 font-semibold mb-1">
+            <i class="fa-solid fa-user-gear"></i>
+            <span>Session Administrateur Sécurisée</span>
+          </div>
+          <h2 class="text-2xl font-extrabold text-white">Tableau de Bord Administration</h2>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <button @click="resetToDefaultData()" class="px-4 py-2 rounded-xl glass-button-secondary border-rose-500/40 text-rose-300 text-xs font-semibold">
+            <i class="fa-solid fa-rotate-left mr-1"></i> Réinitialiser Données
+          </button>
+          <button @click="isAdminMode = false" class="px-4 py-2 rounded-xl glass-button text-xs font-bold">
+            <i class="fa-solid fa-store mr-1"></i> Voir Boutique
+          </button>
+        </div>
+      </div>
+
+      <!-- ADMIN TABS NAVIGATION -->
+      <div class="flex space-x-2 border-b border-white/10 mb-8 overflow-x-auto">
+        <button @click="adminTab = 'overview'; $nextTick(() => renderAdminCharts())" 
+                class="px-5 py-3 text-xs font-bold border-b-2 transition-all duration-200"
+                :class="adminTab === 'overview' ? 'border-purple-500 text-purple-400' : 'border-transparent text-slate-400 hover:text-white'">
+          <i class="fa-solid fa-chart-pie mr-2"></i> Statistiques & Vue d'ensemble
+        </button>
+
+        <button @click="adminTab = 'products'" 
+                class="px-5 py-3 text-xs font-bold border-b-2 transition-all duration-200"
+                :class="adminTab === 'products' ? 'border-purple-500 text-purple-400' : 'border-transparent text-slate-400 hover:text-white'">
+          <i class="fa-solid fa-boxes-stacked mr-2"></i> Gestion des Produits (<span x-text="products.length"></span>)
+        </button>
+
+        <button @click="adminTab = 'users'" 
+                class="px-5 py-3 text-xs font-bold border-b-2 transition-all duration-200"
+                :class="adminTab === 'users' ? 'border-purple-500 text-purple-400' : 'border-transparent text-slate-400 hover:text-white'">
+          <i class="fa-solid fa-users mr-2"></i> Gestion Utilisateurs (<span x-text="users.length"></span>)
+        </button>
+
+        <button @click="adminTab = 'settings'" 
+                class="px-5 py-3 text-xs font-bold border-b-2 transition-all duration-200"
+                :class="adminTab === 'settings' ? 'border-purple-500 text-purple-400' : 'border-transparent text-slate-400 hover:text-white'">
+          <i class="fa-solid fa-sliders mr-2"></i> Paramètres WhatsApp & Magasin
+        </button>
+      </div>
+
+      <!-- TAB 1: OVERVIEW & ANALYTICS -->
+      <div x-show="adminTab === 'overview'">
+        <!-- METRICS CARDS -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div class="glass-panel p-5 rounded-2xl border border-purple-500/20">
+            <p class="text-xs text-slate-400 font-medium">Total Catalogue</p>
+            <p class="text-2xl font-black text-white mt-1" x-text="products.length + ' Produits'"></p>
+            <span class="text-[10px] text-purple-300">4 Catégories actives</span>
+          </div>
+
+          <div class="glass-panel p-5 rounded-2xl border border-pink-500/20">
+            <p class="text-xs text-slate-400 font-medium">Utilisateurs Enregistrés</p>
+            <p class="text-2xl font-black text-pink-400 mt-1" x-text="users.length + ' Comptes'"></p>
+            <span class="text-[10px] text-slate-400">Stockés en LocalStorage</span>
+          </div>
+
+          <div class="glass-panel p-5 rounded-2xl border border-cyan-500/20">
+            <p class="text-xs text-slate-400 font-medium">Valeur Totale Inventaire</p>
+            <p class="text-2xl font-black text-cyan-400 mt-1" x-text="products.reduce((acc, p) => acc + p.price, 0).toFixed(2) + ' DT'"></p>
+            <span class="text-[10px] text-cyan-300">Calculé sur le prix actuel</span>
+          </div>
+
+          <div class="glass-panel p-5 rounded-2xl border border-amber-500/20">
+            <p class="text-xs text-slate-400 font-medium">Favoris Totaux Accumulés</p>
+            <p class="text-2xl font-black text-amber-400 mt-1" x-text="products.reduce((acc, p) => acc + (p.wishlistCount || 0), 0) + ' Likes'"></p>
+            <span class="text-[10px] text-amber-300">Indicateur d'intérêt client</span>
+          </div>
+        </div>
+
+        <!-- CHARTS GRID -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="glass-panel p-6 rounded-3xl lg:col-span-2">
+            <h3 class="text-sm font-bold text-white mb-4 flex items-center space-x-2">
+              <i class="fa-solid fa-heart text-pink-500"></i>
+              <span>Top 5 des produits les plus mis en favoris</span>
+            </h3>
+            <div class="h-64">
+              <canvas id="chartWishlist"></canvas>
+            </div>
+          </div>
+
+          <div class="glass-panel p-6 rounded-3xl">
+            <h3 class="text-sm font-bold text-white mb-4 flex items-center space-x-2">
+              <i class="fa-solid fa-chart-pie text-cyan-400"></i>
+              <span>Répartition par Catégorie</span>
+            </h3>
+            <div class="h-64">
+              <canvas id="chartCategories"></canvas>
+            </div>
+          </div>
+
+          <div class="glass-panel p-6 rounded-3xl lg:col-span-3">
+            <h3 class="text-sm font-bold text-white mb-4 flex items-center space-x-2">
+              <i class="fa-solid fa-cart-shopping text-purple-400"></i>
+              <span>Demande d'ajout au panier par produit</span>
+            </h3>
+            <div class="h-64">
+              <canvas id="chartCartPopularity"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: PRODUCT MANAGEMENT -->
+      <div x-show="adminTab === 'products'">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-lg font-bold text-white">Catalogue des Produits</h3>
+          <button @click="openAddProductModal()" class="px-4 py-2.5 rounded-xl glass-button text-xs font-bold flex items-center space-x-2">
+            <i class="fa-solid fa-plus"></i>
+            <span>Nouveau Produit</span>
+          </button>
+        </div>
+
+        <!-- PRODUCTS TABLE -->
+        <div class="glass-panel rounded-2xl overflow-hidden border border-white/10">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-white/5 border-b border-white/10 text-slate-400 font-semibold uppercase tracking-wider">
+                <tr>
+                  <th class="py-3.5 px-4">Produit</th>
+                  <th class="py-3.5 px-4">Catégorie</th>
+                  <th class="py-3.5 px-4">Prix Original</th>
+                  <th class="py-3.5 px-4">Prix Promo</th>
+                  <th class="py-3.5 px-4">Tailles</th>
+                  <th class="py-3.5 px-4">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-white/5 text-slate-200">
+                <template x-for="prod in products" :key="prod.id">
+                  <tr class="hover:bg-white/5 transition-colors">
+                    <td class="py-3 px-4 flex items-center space-x-3">
+                      <img :src="prod.image" :alt="prod.title" class="w-10 h-10 rounded-lg object-cover bg-slate-900">
+                      <div>
+                        <p class="font-bold text-white" x-text="prod.title"></p>
+                        <p class="text-[10px] text-slate-400 truncate max-w-xs" x-text="prod.description"></p>
+                      </div>
+                    </td>
+                    <td class="py-3 px-4">
+                      <span class="px-2 py-1 rounded-full text-[10px] font-bold text-white" :class="getBadgeClass(prod.category)" x-text="prod.category"></span>
+                    </td>
+                    <td class="py-3 px-4 text-slate-400 line-through" x-text="prod.originalPrice ? prod.originalPrice.toFixed(2) + ' DT' : '-'"></td>
+                    <td class="py-3 px-4 font-bold text-emerald-400" x-text="prod.price.toFixed(2) + ' DT'"></td>
+                    <td class="py-3 px-4 text-slate-300" x-text="prod.sizes && prod.sizes.length > 0 ? prod.sizes.join(', ') : 'N/A'"></td>
+                    <td class="py-3 px-4">
+                      <div class="flex items-center space-x-2">
+                        <button @click="openEditProductModal(prod)" class="p-2 rounded-lg glass-button-secondary text-cyan-400 hover:text-white">
+                          <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button @click="deleteProduct(prod.id)" class="p-2 rounded-lg glass-button-secondary text-rose-400 hover:text-white">
+                          <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: USER MANAGEMENT -->
+      <div x-show="adminTab === 'users'">
+        <div class="mb-6">
+          <h3 class="text-lg font-bold text-white">Comptes Utilisateurs Enregistrés</h3>
+          <p class="text-xs text-slate-400">Gérez les comptes clients et bloquez les utilisateurs indésirables.</p>
+        </div>
+
+        <div class="glass-panel rounded-2xl overflow-hidden border border-white/10">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-white/5 border-b border-white/10 text-slate-400 font-semibold uppercase tracking-wider">
+                <tr>
+                  <th class="py-3.5 px-4">Nom / Utilisateur</th>
+                  <th class="py-3.5 px-4">E-mail</th>
+                  <th class="py-3.5 px-4">Rôle</th>
+                  <th class="py-3.5 px-4">Date d'inscription</th>
+                  <th class="py-3.5 px-4">Statut</th>
+                  <th class="py-3.5 px-4">Action</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-white/5 text-slate-200">
+                <template x-for="usr in users" :key="usr.id">
+                  <tr class="hover:bg-white/5 transition-colors">
+                    <td class="py-3 px-4">
+                      <p class="font-bold text-white" x-text="usr.name"></p>
+                      <p class="text-[10px] text-purple-300" x-text="'@' + usr.username"></p>
+                    </td>
+                    <td class="py-3 px-4 text-slate-300" x-text="usr.email"></td>
+                    <td class="py-3 px-4">
+                      <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
+                            :class="usr.role === 'admin' ? 'bg-purple-500/30 text-purple-300 border border-purple-500/40' : 'bg-slate-700 text-slate-300'"
+                            x-text="usr.role">
+                      </span>
+                    </td>
+                    <td class="py-3 px-4 text-slate-400" x-text="usr.createdAt || 'Standard'"></td>
+                    <td class="py-3 px-4">
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
+                            :class="usr.status === 'blocked' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'"
+                            x-text="usr.status === 'blocked' ? 'Bloqué' : 'Actif'">
+                      </span>
+                    </td>
+                    <td class="py-3 px-4">
+                      <template x-if="usr.username !== 'ghassen'">
+                        <button @click="toggleBlockUser(usr)" 
+                                class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200"
+                                :class="usr.status === 'blocked' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/40'">
+                          <span x-text="usr.status === 'blocked' ? 'Débloquer' : 'Bloquer'"></span>
+                        </button>
+                      </template>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: STORE SETTINGS -->
+      <div x-show="adminTab === 'settings'" class="max-w-xl">
+        <div class="glass-panel p-6 rounded-3xl space-y-4">
+          <h3 class="text-lg font-bold text-white mb-2">Paramètres de la Boutique 9achech</h3>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Nom du magasin</label>
+            <input type="text" x-model="settings.storeName" class="w-full glass-input px-3.5 py-2.5 rounded-xl text-xs">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Numéro WhatsApp de réception des commandes</label>
+            <input type="text" x-model="settings.whatsappNumber" class="w-full glass-input px-3.5 py-2.5 rounded-xl text-xs">
+            <span class="text-[10px] text-slate-400">Format international (ex: +21620123456)</span>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Frais de livraison fixe (DT)</label>
+            <input type="number" step="0.5" x-model.number="settings.shippingFee" class="w-full glass-input px-3.5 py-2.5 rounded-xl text-xs">
+          </div>
+
+          <div class="pt-4 border-t border-white/10 flex justify-end">
+            <button @click="showToast('Paramètres sauvegardés avec succès !', 'success')" class="px-5 py-2.5 rounded-xl glass-button text-xs font-bold">
+              Enregistrer les modifications
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="glass-header mt-16 border-t border-white/10 py-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+        
+        <div>
+          <div class="flex items-center space-x-2 mb-3">
+            <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 to-pink-500 flex items-center justify-center text-white text-xs font-bold">9</div>
+            <span class="font-extrabold text-lg text-white tracking-wider">9ACHECH</span>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed mb-4">
+            Boutique lifestyle moderne & recharges de télécommunications instantanées pour toute la Tunisie.
+          </p>
+          <div class="flex space-x-3 text-slate-400 text-sm">
+            <a href="#" class="hover:text-purple-400"><i class="fa-brands fa-instagram"></i></a>
+            <a href="#" class="hover:text-purple-400"><i class="fa-brands fa-facebook"></i></a>
+            <a href="#" class="hover:text-purple-400"><i class="fa-brands fa-whatsapp"></i></a>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-3">Catégories</h4>
+          <ul class="space-y-2 text-xs text-slate-400">
+            <li><a href="#" @click.prevent="activeCategory = 'Clowth'" class="hover:text-purple-300">Vêtements Streetwear</a></li>
+            <li><a href="#" @click.prevent="activeCategory = 'Accessoires'" class="hover:text-purple-300">Accessoires de Mode</a></li>
+            <li><a href="#" @click.prevent="activeCategory = 'Décoration'" class="hover:text-purple-300">Décoration & Ampoules LED</a></li>
+            <li><a href="#" @click.prevent="activeCategory = 'Connexion Orange / Ooredoo'" class="hover:text-amber-300">Recharges Connexion Orange / Ooredoo</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-3">Support Client</h4>
+          <ul class="space-y-2 text-xs text-slate-400">
+            <li><i class="fa-solid fa-headset mr-2 text-purple-400"></i> Service Client 7/7</li>
+            <li><i class="fa-brands fa-whatsapp mr-2 text-emerald-400"></i> Commande WhatsApp Directe</li>
+            <li><i class="fa-solid fa-truck-fast mr-2 text-cyan-400"></i> Livraison Toutes Gouvernorats</li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-3">Commandes WhatsApp</h4>
+          <p class="text-xs text-slate-400 mb-3">Numéro officiel de traitement:</p>
+          <div class="px-3.5 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center justify-between">
+            <span x-text="settings.whatsappNumber"></span>
+            <i class="fa-brands fa-whatsapp text-lg"></i>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="pt-6 border-t border-white/10 text-center text-[11px] text-slate-500 flex flex-col sm:flex-row items-center justify-between">
+        <p>© 2026 9achech Store. Déployé sur GitHub Pages. Tous droits réservés.</p>
+        <p class="mt-2 sm:mt-0 text-slate-400">Design Glassmorphism & UI/UX Épurée</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==================== MODALS & DRAWERS ==================== -->
+
+  <!-- 🛒 CART DRAWER -->
+  <div x-show="isCartOpen" class="fixed inset-0 z-50 overflow-hidden" x-cloak>
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm transition-opacity" @click="isCartOpen = false"></div>
+    
+    <div class="fixed inset-y-0 right-0 max-w-full flex pl-10">
+      <div class="w-screen max-w-md glass-drawer p-6 flex flex-col justify-between shadow-2xl">
+        
+        <div>
+          <!-- Drawer Header -->
+          <div class="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-basket-shopping text-purple-400 text-xl"></i>
+              <h2 class="text-lg font-bold text-white">Votre Panier (<span x-text="cartCount()"></span>)</h2>
+            </div>
+            <button @click="isCartOpen = false" class="p-2 rounded-xl glass-button-secondary text-xs">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <!-- Cart Items List -->
+          <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+            <template x-for="(item, idx) in cart" :key="idx">
+              <div class="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
+                <div class="flex items-center space-x-3">
+                  <img :src="item.product.image" :alt="item.product.title" class="w-12 h-12 rounded-xl object-cover">
+                  <div>
+                    <h4 class="text-xs font-bold text-white line-clamp-1" x-text="item.product.title"></h4>
+                    <p class="text-[10px] text-purple-300" x-show="item.size" x-text="'Taille: ' + item.size"></p>
+                    <p class="text-xs font-extrabold text-cyan-400 mt-0.5" x-text="item.product.price.toFixed(2) + ' DT'"></p>
+                  </div>
+                </div>
+
+                <div class="flex items-center space-x-3">
+                  <!-- Quantity adjuster -->
+                  <div class="flex items-center space-x-1.5 bg-slate-900/60 rounded-lg p-1 border border-white/10">
+                    <button @click="updateCartQty(idx, -1)" class="w-5 h-5 rounded flex items-center justify-center text-xs text-slate-300 hover:bg-white/10">-</button>
+                    <span class="text-xs font-bold px-1" x-text="item.quantity"></span>
+                    <button @click="updateCartQty(idx, 1)" class="w-5 h-5 rounded flex items-center justify-center text-xs text-slate-300 hover:bg-white/10">+</button>
+                  </div>
+
+                  <!-- Remove Button -->
+                  <button @click="removeFromCart(idx)" class="text-rose-400 hover:text-rose-300 text-xs p-1">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </div>
+              </div>
+            </template>
+
+            <div x-show="cart.length === 0" class="py-12 text-center text-slate-400">
+              <i class="fa-solid fa-cart-arrow-down text-4xl mb-3 text-slate-600"></i>
+              <p class="text-xs">Votre panier est vide pour le moment</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Drawer Footer -->
+        <div class="pt-4 border-t border-white/10 space-y-3">
+          <div class="space-y-1 text-xs">
+            <div class="flex justify-between text-slate-400">
+              <span>Sous-total:</span>
+              <span x-text="cartSubtotal().toFixed(2) + ' DT'"></span>
+            </div>
+            <div class="flex justify-between text-slate-400">
+              <span>Livraison:</span>
+              <span x-text="settings.shippingFee.toFixed(2) + ' DT'"></span>
+            </div>
+            <div class="flex justify-between text-sm font-extrabold text-white pt-2 border-t border-white/10">
+              <span>Total:</span>
+              <span class="text-cyan-400" x-text="cartFinalTotal().toFixed(2) + ' DT'"></span>
+            </div>
+          </div>
+
+          <button @click="openCheckoutModal()" 
+                  :disabled="cart.length === 0"
+                  class="w-full py-3.5 rounded-2xl glass-button text-sm font-bold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed">
+            <i class="fa-brands fa-whatsapp text-lg text-emerald-400"></i>
+            <span>Commander via WhatsApp</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ❤️ WISHLIST DRAWER -->
+  <div x-show="isWishlistOpen" class="fixed inset-0 z-50 overflow-hidden" x-cloak>
+    <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" @click="isWishlistOpen = false"></div>
+    <div class="fixed inset-y-0 right-0 max-w-full flex pl-10">
+      <div class="w-screen max-w-md glass-drawer p-6 flex flex-col justify-between shadow-2xl">
+        <div>
+          <div class="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-heart text-pink-500 text-xl"></i>
+              <h2 class="text-lg font-bold text-white">Vos Favoris (<span x-text="wishlist.length"></span>)</h2>
+            </div>
+            <button @click="isWishlistOpen = false" class="p-2 rounded-xl glass-button-secondary text-xs">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <div class="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+            <template x-for="p in getWishlistProducts()" :key="p.id">
+              <div class="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
+                <div class="flex items-center space-x-3">
+                  <img :src="p.image" :alt="p.title" class="w-12 h-12 rounded-xl object-cover">
+                  <div>
+                    <h4 class="text-xs font-bold text-white line-clamp-1" x-text="p.title"></h4>
+                    <p class="text-xs font-extrabold text-pink-400" x-text="p.price.toFixed(2) + ' DT'"></p>
+                  </div>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                  <button @click="addToCart(p)" class="p-2 rounded-xl glass-button text-xs">
+                    <i class="fa-solid fa-cart-plus"></i>
+                  </button>
+                  <button @click="toggleWishlist(p.id)" class="p-2 rounded-xl glass-button-secondary text-rose-400 text-xs">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </div>
+              </div>
+            </template>
+
+            <div x-show="wishlist.length === 0" class="py-12 text-center text-slate-400">
+              <i class="fa-regular fa-heart text-4xl mb-3 text-slate-600"></i>
+              <p class="text-xs">Aucun favori enregistré</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🔍 PRODUCT DETAIL & QUICK VIEW MODAL -->
+  <div x-show="isProductModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4" x-cloak>
+    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-md" @click="isProductModalOpen = false"></div>
+
+    <div class="relative w-full max-w-3xl glass-modal rounded-3xl p-6 sm:p-8 overflow-hidden z-10 my-8">
+      <button @click="isProductModalOpen = false" class="absolute top-4 right-4 w-8 h-8 rounded-full glass-button-secondary flex items-center justify-center text-xs text-slate-300 hover:text-white">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <template x-if="selectedProduct">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <!-- Image -->
+          <div class="relative h-64 md:h-full rounded-2xl overflow-hidden bg-slate-950/50">
+            <img :src="selectedProduct.image" :alt="selectedProduct.title" class="w-full h-full object-cover">
+            <span class="absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] font-bold text-white uppercase"
+                  :class="getBadgeClass(selectedProduct.category)"
+                  x-text="selectedProduct.category">
+            </span>
+          </div>
+
+          <!-- Product Details -->
+          <div class="flex flex-col justify-between space-y-4">
+            <div>
+              <h2 class="text-xl font-extrabold text-white mb-2" x-text="selectedProduct.title"></h2>
+              <p class="text-xs text-slate-300 leading-relaxed mb-4" x-text="selectedProduct.description"></p>
+
+              <!-- Price section -->
+              <div class="flex items-center space-x-3 mb-4">
+                <span class="text-2xl font-black text-white text-glow-purple" x-text="selectedProduct.price.toFixed(2) + ' DT'"></span>
+                <template x-if="selectedProduct.originalPrice > selectedProduct.price">
+                  <span class="text-sm text-slate-400 line-through" x-text="selectedProduct.originalPrice.toFixed(2) + ' DT'"></span>
+                </template>
+              </div>
+
+              <!-- Size selector if Clothes category -->
+              <template x-if="selectedProduct.sizes && selectedProduct.sizes.length > 0">
+                <div class="mb-4">
+                  <label class="block text-xs font-bold text-slate-300 mb-2">Choisir la taille:</label>
+                  <div class="flex space-x-2">
+                    <template x-for="sz in selectedProduct.sizes" :key="sz">
+                      <button @click="selectedSize = sz"
+                              class="w-10 h-10 rounded-xl text-xs font-bold size-pill flex items-center justify-center"
+                              :class="selectedSize === sz ? 'active' : ''"
+                              x-text="sz">
+                      </button>
+                    </template>
+                  </div>
+                </div>
+              </template>
+
+              <!-- Quantity Selector -->
+              <div class="mb-4">
+                <label class="block text-xs font-bold text-slate-300 mb-2">Quantité:</label>
+                <div class="inline-flex items-center space-x-3 bg-white/5 border border-white/10 rounded-xl p-1">
+                  <button @click="quantity = Math.max(1, quantity - 1)" class="w-8 h-8 rounded-lg glass-button-secondary text-xs font-bold">-</button>
+                  <span class="text-sm font-extrabold px-3 text-white" x-text="quantity"></span>
+                  <button @click="quantity++" class="w-8 h-8 rounded-lg glass-button-secondary text-xs font-bold">+</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="flex space-x-3 pt-4 border-t border-white/10">
+              <button @click="addToCart(selectedProduct, selectedSize, quantity)" class="flex-1 py-3 rounded-2xl glass-button text-xs font-bold flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-bag-shopping"></i>
+                <span>Ajouter au Panier</span>
+              </button>
+              
+              <button @click="toggleWishlist(selectedProduct.id)" 
+                      class="px-4 py-3 rounded-2xl glass-button-secondary text-xs font-bold"
+                      :class="isInWishlist(selectedProduct.id) ? 'text-pink-500 border-pink-500/40' : 'text-slate-300'">
+                <i class="fa-solid fa-heart"></i>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <!-- 📲 WHATSAPP CHECKOUT MODAL -->
+  <div x-show="isCheckoutModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4" x-cloak>
+    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-md" @click="isCheckoutModalOpen = false"></div>
+
+    <div class="relative w-full max-w-lg glass-modal rounded-3xl p-6 sm:p-8 z-10">
+      <div class="flex items-center justify-between pb-4 border-b border-white/10 mb-6">
+        <div class="flex items-center space-x-2">
+          <i class="fa-brands fa-whatsapp text-emerald-400 text-2xl"></i>
+          <h2 class="text-lg font-bold text-white">Finaliser la commande WhatsApp</h2>
+        </div>
+        <button @click="isCheckoutModalOpen = false" class="p-2 rounded-xl glass-button-secondary text-xs">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form @submit.prevent="submitWhatsAppOrder()" class="space-y-4 text-xs">
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">Nom & Prénom *</label>
+          <input type="text" x-model="checkoutForm.name" required placeholder="Ex: Ahmed Ben Salem" class="w-full glass-input px-3.5 py-2.5 rounded-xl">
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">Numéro Téléphone *</label>
+          <input type="tel" x-model="checkoutForm.phone" required placeholder="Ex: 20 123 456" class="w-full glass-input px-3.5 py-2.5 rounded-xl">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Gouvernorat / Ville *</label>
+            <select x-model="checkoutForm.city" class="w-full glass-input px-3 py-2.5 rounded-xl">
+              <option value="Tunis" class="bg-slate-900">Tunis</option>
+              <option value="Ariana" class="bg-slate-900">Ariana</option>
+              <option value="Ben Arous" class="bg-slate-900">Ben Arous</option>
+              <option value="Sousse" class="bg-slate-900">Sousse</option>
+              <option value="Sfax" class="bg-slate-900">Sfax</option>
+              <option value="Bizerte" class="bg-slate-900">Bizerte</option>
+              <option value="Nabeul" class="bg-slate-900">Nabeul</option>
+              <option value="Autre" class="bg-slate-900">Autre Gouvernorat</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Adresse Complète *</label>
+            <input type="text" x-model="checkoutForm.address" required placeholder="Rue, n° maison..." class="w-full glass-input px-3.5 py-2.5 rounded-xl">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">Notes / Instructions (Optionnel)</label>
+          <textarea x-model="checkoutForm.notes" rows="2" placeholder="Heure de livraison préférée..." class="w-full glass-input px-3.5 py-2.5 rounded-xl"></textarea>
+        </div>
+
+        <!-- Summary preview -->
+        <div class="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+          <div class="flex justify-between text-slate-400">
+            <span>Articles (<span x-text="cartCount()"></span>):</span>
+            <span x-text="cartSubtotal().toFixed(2) + ' DT'"></span>
+          </div>
+          <div class="flex justify-between text-slate-400">
+            <span>Livraison Fixe:</span>
+            <span x-text="settings.shippingFee.toFixed(2) + ' DT'"></span>
+          </div>
+          <div class="flex justify-between font-black text-white text-sm pt-1 border-t border-white/10">
+            <span>Total:</span>
+            <span class="text-emerald-400" x-text="cartFinalTotal().toFixed(2) + ' DT'"></span>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-sm shadow-lg shadow-emerald-500/30 flex items-center justify-center space-x-2">
+          <i class="fa-brands fa-whatsapp text-lg"></i>
+          <span>Envoyer la commande sur WhatsApp</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 🔐 AUTHENTICATION & LOGIN/SIGNUP MODAL -->
+  <div x-show="isAuthOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4" x-cloak>
+    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-md" @click="isAuthOpen = false"></div>
+
+    <div class="relative w-full max-w-md glass-modal rounded-3xl p-6 sm:p-8 z-10">
+      <button @click="isAuthOpen = false" class="absolute top-4 right-4 w-8 h-8 rounded-full glass-button-secondary flex items-center justify-center text-xs text-slate-300">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <!-- Auth Tabs -->
+      <div class="flex space-x-2 border-b border-white/10 mb-6">
+        <button @click="authTab = 'login'" 
+                class="flex-1 py-3 text-xs font-bold border-b-2 transition-all duration-200"
+                :class="authTab === 'login' ? 'border-purple-500 text-purple-400' : 'border-transparent text-slate-400 hover:text-white'">
+          Se Connecter
+        </button>
+        <button @click="authTab = 'signup'" 
+                class="flex-1 py-3 text-xs font-bold border-b-2 transition-all duration-200"
+                :class="authTab === 'signup' ? 'border-purple-500 text-purple-400' : 'border-transparent text-slate-400 hover:text-white'">
+          Créer un Compte
+        </button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <form x-show="authTab === 'login'" @submit.prevent="handleLogin()" class="space-y-4 text-xs">
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">Nom d'utilisateur ou E-mail</label>
+          <input type="text" x-model="loginForm.username" required placeholder="ex: karim_ben ou ghassen" class="w-full glass-input px-3.5 py-2.5 rounded-xl">
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">Mot de passe</label>
+          <input type="password" x-model="loginForm.password" required placeholder="••••••••" class="w-full glass-input px-3.5 py-2.5 rounded-xl">
+        </div>
+
+        <div class="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-[11px] text-purple-300">
+          <p class="font-bold mb-0.5">Accès Administrateur par défaut:</p>
+          <p>Login: <code class="text-white">ghassen</code> | Pass: <code class="text-white">azeqsdwxcgg99</code></p>
+        </div>
+
+        <button type="submit" class="w-full py-3 rounded-2xl glass-button text-xs font-bold">
+          Se Connecter
+        </button>
+      </form>
+
+      <!-- SIGNUP FORM -->
+      <form x-show="authTab === 'signup'" @submit.prevent="handleSignup()" class="space-y-4 text-xs">
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">Nom Complet</label>
+          <input type="text" x-model="signupForm.name" required placeholder="ex: Sonia Mansour" class="w-full glass-input px-3.5 py-2.5 rounded-xl">
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">Nom d'utilisateur</label>
+          <input type="text" x-model="signupForm.username" required placeholder="ex: sonia_m" class="w-full glass-input px-3.5 py-2.5 rounded-xl">
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">Adresse E-mail</label>
+          <input type="email" x-model="signupForm.email" required placeholder="sonia@example.com" class="w-full glass-input px-3.5 py-2.5 rounded-xl">
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">Mot de passe</label>
+          <input type="password" x-model="signupForm.password" required placeholder="••••••••" class="w-full glass-input px-3.5 py-2.5 rounded-xl">
+        </div>
+
+        <button type="submit" class="w-full py-3 rounded-2xl glass-button text-xs font-bold">
+          S'inscrire
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- 🛠️ ADMIN EDIT / ADD PRODUCT MODAL -->
+  <div x-show="isProductEditModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4" x-cloak>
+    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-md" @click="isProductEditModalOpen = false"></div>
+
+    <div class="relative w-full max-w-xl glass-modal rounded-3xl p-6 sm:p-8 z-10 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-4 border-b border-white/10 mb-6">
+        <h2 class="text-lg font-bold text-white" x-text="isEditingExisting ? 'Modifier le Produit' : 'Ajouter un Nouveau Produit'"></h2>
+        <button @click="isProductEditModalOpen = false" class="p-2 rounded-xl glass-button-secondary text-xs">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form @submit.prevent="saveProductForm()" class="space-y-4 text-xs">
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">Titre du produit *</label>
+          <input type="text" x-model="productForm.title" required class="w-full glass-input px-3.5 py-2.5 rounded-xl">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Catégorie *</label>
+            <select x-model="productForm.category" class="w-full glass-input px-3 py-2.5 rounded-xl">
+              <option value="Clowth" class="bg-slate-900">Clowth (Vêtements)</option>
+              <option value="Accessoires" class="bg-slate-900">Accessoires</option>
+              <option value="Décoration" class="bg-slate-900">Décoration</option>
+              <option value="Connexion Orange / Ooredoo" class="bg-slate-900">Connexion Orange / Ooredoo</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">URL de l'image</label>
+            <input type="url" x-model="productForm.image" required class="w-full glass-input px-3.5 py-2.5 rounded-xl">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Prix Normal (DT)</label>
+            <input type="number" step="0.5" x-model.number="productForm.originalPrice" class="w-full glass-input px-3.5 py-2.5 rounded-xl">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Prix Promo (DT) *</label>
+            <input type="number" step="0.5" x-model.number="productForm.price" required class="w-full glass-input px-3.5 py-2.5 rounded-xl">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">Tailles disponibles (séparées par des virgules)</label>
+          <input type="text" x-model="productForm.sizesInput" placeholder="Ex: S, M, L, XL" class="w-full glass-input px-3.5 py-2.5 rounded-xl">
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">Description du produit</label>
+          <textarea x-model="productForm.description" rows="3" class="w-full glass-input px-3.5 py-2.5 rounded-xl"></textarea>
+        </div>
+
+        <div class="flex justify-end space-x-3 pt-4 border-t border-white/10">
+          <button type="button" @click="isProductEditModalOpen = false" class="px-4 py-2.5 rounded-xl glass-button-secondary">Annuler</button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl glass-button font-bold">Sauvegarder</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</body>
+</html>
