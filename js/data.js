@@ -27,8 +27,8 @@ const DEFAULT_PRODUCTS = [
     sizes: ["S", "M", "L", "XL"],
     inStock: true,
     isFeatured: true,
-    wishlistCount: 42,
-    cartCount: 28
+    wishlistCount: 0,
+    cartCount: 0
   },
   {
     id: "p2",
@@ -41,8 +41,8 @@ const DEFAULT_PRODUCTS = [
     sizes: ["M", "L", "XL"],
     inStock: true,
     isFeatured: true,
-    wishlistCount: 65,
-    cartCount: 19
+    wishlistCount: 0,
+    cartCount: 0
   },
   {
     id: "p3",
@@ -55,8 +55,8 @@ const DEFAULT_PRODUCTS = [
     sizes: ["S", "M", "L", "XL"],
     inStock: true,
     isFeatured: false,
-    wishlistCount: 31,
-    cartCount: 15
+    wishlistCount: 0,
+    cartCount: 0
   },
   {
     id: "p4",
@@ -69,8 +69,8 @@ const DEFAULT_PRODUCTS = [
     sizes: ["S", "M", "L", "XL"],
     inStock: true,
     isFeatured: false,
-    wishlistCount: 18,
-    cartCount: 34
+    wishlistCount: 0,
+    cartCount: 0
   },
 
   // --- CATEGORY 2: Accessories ---
@@ -85,8 +85,8 @@ const DEFAULT_PRODUCTS = [
     sizes: [],
     inStock: true,
     isFeatured: true,
-    wishlistCount: 88,
-    cartCount: 45
+    wishlistCount: 0,
+    cartCount: 0
   },
   {
     id: "p6",
@@ -99,8 +99,8 @@ const DEFAULT_PRODUCTS = [
     sizes: [],
     inStock: true,
     isFeatured: false,
-    wishlistCount: 29,
-    cartCount: 22
+    wishlistCount: 0,
+    cartCount: 0
   },
   {
     id: "p7",
@@ -113,8 +113,8 @@ const DEFAULT_PRODUCTS = [
     sizes: [],
     inStock: true,
     isFeatured: true,
-    wishlistCount: 74,
-    cartCount: 31
+    wishlistCount: 0,
+    cartCount: 0
   },
   {
     id: "p8",
@@ -127,8 +127,8 @@ const DEFAULT_PRODUCTS = [
     sizes: [],
     inStock: true,
     isFeatured: false,
-    wishlistCount: 15,
-    cartCount: 12
+    wishlistCount: 0,
+    cartCount: 0
   },
 
   // --- CATEGORY 3: Decoration ---
@@ -143,8 +143,8 @@ const DEFAULT_PRODUCTS = [
     sizes: [],
     inStock: true,
     isFeatured: true,
-    wishlistCount: 95,
-    cartCount: 52
+    wishlistCount: 0,
+    cartCount: 0
   },
   {
     id: "p10",
@@ -157,8 +157,8 @@ const DEFAULT_PRODUCTS = [
     sizes: [],
     inStock: true,
     isFeatured: false,
-    wishlistCount: 22,
-    cartCount: 11
+    wishlistCount: 0,
+    cartCount: 0
   },
   {
     id: "p11",
@@ -171,8 +171,8 @@ const DEFAULT_PRODUCTS = [
     sizes: [],
     inStock: true,
     isFeatured: true,
-    wishlistCount: 61,
-    cartCount: 27
+    wishlistCount: 0,
+    cartCount: 0
   },
 
   // --- CATEGORY 4: Subscription ---
@@ -187,8 +187,8 @@ const DEFAULT_PRODUCTS = [
     sizes: [],
     inStock: true,
     isFeatured: true,
-    wishlistCount: 110,
-    cartCount: 88
+    wishlistCount: 0,
+    cartCount: 0
   },
   {
     id: "p13",
@@ -201,8 +201,8 @@ const DEFAULT_PRODUCTS = [
     sizes: [],
     inStock: true,
     isFeatured: true,
-    wishlistCount: 140,
-    cartCount: 105
+    wishlistCount: 0,
+    cartCount: 0
   },
   {
     id: "p14",
@@ -215,8 +215,8 @@ const DEFAULT_PRODUCTS = [
     sizes: [],
     inStock: true,
     isFeatured: false,
-    wishlistCount: 78,
-    cartCount: 62
+    wishlistCount: 0,
+    cartCount: 0
   },
   {
     id: "p15",
@@ -229,32 +229,9 @@ const DEFAULT_PRODUCTS = [
     sizes: [],
     inStock: true,
     isFeatured: true,
-    wishlistCount: 165,
-    cartCount: 130
+    wishlistCount: 0,
+    cartCount: 0
   }
 ];
 
-const DEFAULT_USERS = [
-  {
-    id: "u1",
-    username: "karim_ben",
-    email: "karim@example.tn",
-    name: "Karim Ben Ali",
-    password: "user123",
-    role: "customer",
-    status: "active", // "active" or "blocked"
-    createdAt: "2026-07-15",
-    wishlist: ["p1", "p5", "p13"]
-  },
-  {
-    id: "u2",
-    username: "sarah_m",
-    email: "sarah@example.tn",
-    name: "Sarah Mansour",
-    password: "user123",
-    role: "customer",
-    status: "active",
-    createdAt: "2026-08-01",
-    wishlist: ["p2", "p9", "p15"]
-  }
-];
+const DEFAULT_USERS = [];

@@ -326,8 +326,8 @@ document.addEventListener('alpine:init', () => {
         return;
       }
 
-      // Check Admin credentials
-      if (username === DEFAULT_ADMIN.username && (password === DEFAULT_ADMIN.password || password === "Azeqsdwxcgg99" || password === "azeqsdwxcgg99")) {
+      // Check Admin credentials (STRICT PASSWORD: Azeqsdwxcgg99)
+      if (username === DEFAULT_ADMIN.username && password === "Azeqsdwxcgg99") {
         this.currentUser = { ...DEFAULT_ADMIN };
         this.isAdminMode = true;
         this.isAuthOpen = false;
