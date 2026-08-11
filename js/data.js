@@ -175,11 +175,11 @@ const DEFAULT_PRODUCTS = [
     cartCount: 27
   },
 
-  // --- CATEGORY 4: Telecom Connectivity (Connexion Orange / Ooredoo) ---
+  // --- CATEGORY 4: Subscription ---
   {
     id: "p12",
     title: "Recharge Orange 25 DT Code Express",
-    category: "Connexion Orange / Ooredoo",
+    category: "Subscription",
     description: "Orange Tunisia 25 DT recharge code delivered instantly via WhatsApp + bonus 25% internet volume.",
     image: "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80",
     originalPrice: 25.00,
@@ -193,7 +193,7 @@ const DEFAULT_PRODUCTS = [
   {
     id: "p13",
     title: "Pass Internet Orange 25 GB (30 Jours)",
-    category: "Connexion Orange / Ooredoo",
+    category: "Subscription",
     description: "High speed 4G/5G internet bundle 25 GB valid for 30 days on Orange SIM card. Immediate direct activation.",
     image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
     originalPrice: 30.00,
@@ -207,7 +207,7 @@ const DEFAULT_PRODUCTS = [
   {
     id: "p14",
     title: "Recharge Ooredoo 10 DT Code Express",
-    category: "Connexion Orange / Ooredoo",
+    category: "Subscription",
     description: "Ooredoo Tunisia 10 DT recharge code sent to your phone with double bonus credit.",
     image: "https://images.unsplash.com/photo-1616469829941-c7200edec809?auto=format&fit=crop&w=800&q=80",
     originalPrice: 10.00,
@@ -221,7 +221,7 @@ const DEFAULT_PRODUCTS = [
   {
     id: "p15",
     title: "Pass Internet Flex Ooredoo 50 GB (30 Jours)",
-    category: "Connexion Orange / Ooredoo",
+    category: "Subscription",
     description: "Unlimited night + 50 GB data monthly pack for gamer & streaming lovers on Ooredoo network.",
     image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80",
     originalPrice: 55.00,

@@ -265,10 +265,10 @@
               <span>Explorer la Boutique</span>
               <i class="fa-solid fa-arrow-right"></i>
             </button>
-            <button @click="activeCategory = 'Connexion Orange / Ooredoo'; document.getElementById('catalog-section').scrollIntoView({ behavior: 'smooth' })" 
+            <button @click="activeCategory = 'Subscription'; document.getElementById('catalog-section').scrollIntoView({ behavior: 'smooth' })" 
                     class="px-6 py-3.5 rounded-2xl glass-button-secondary text-sm font-semibold flex items-center space-x-2 border border-amber-500/30 text-amber-300">
-              <i class="fa-solid fa-wifi text-amber-400"></i>
-              <span>Recharges Telecom</span>
+              <i class="fa-solid fa-id-card text-amber-400"></i>
+              <span>Subscriptions</span>
             </button>
           </div>
 
@@ -300,9 +300,39 @@
           <div class="flex items-center space-x-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
             <template x-for="cat in categories" :key="cat">
               <button @click="activeCategory = cat"
-                      class="px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-300 border"
+                      class="px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-300 border flex items-center space-x-2"
                       :class="activeCategory === cat ? 'bg-gradient-to-r from-purple-600 to-pink-600 border-purple-400/50 text-white shadow-lg shadow-purple-500/25' : 'glass-button-secondary border-white/10 text-slate-300 hover:text-white'">
-                <span x-text="cat === 'Clowth' ? '👕 Vêtements' : (cat === 'Accessoires' ? '👓 Accessoires' : (cat === 'Décoration' ? '🏺 Décoration' : (cat.includes('Connexion') ? '📱 Connexion Orange / Ooredoo' : '✨ Tous les produits')))"></span>
+                <!-- PRETTY LOGOS & ICONS FOR CATEGORIES -->
+                <template x-if="cat === 'Subscription'">
+                  <span class="flex items-center space-x-1.5 text-amber-300">
+                    <i class="fa-solid fa-id-card text-amber-400 text-sm"></i>
+                    <span>Subscription</span>
+                  </span>
+                </template>
+                <template x-if="cat === 'Clowth'">
+                  <span class="flex items-center space-x-1.5">
+                    <i class="fa-solid fa-shirt text-purple-300 text-sm"></i>
+                    <span>Vêtements</span>
+                  </span>
+                </template>
+                <template x-if="cat === 'Accessoires'">
+                  <span class="flex items-center space-x-1.5">
+                    <i class="fa-solid fa-glasses text-cyan-300 text-sm"></i>
+                    <span>Accessoires</span>
+                  </span>
+                </template>
+                <template x-if="cat === 'Décoration'">
+                  <span class="flex items-center space-x-1.5">
+                    <i class="fa-solid fa-couch text-emerald-300 text-sm"></i>
+                    <span>Décoration</span>
+                  </span>
+                </template>
+                <template x-if="cat === 'All'">
+                  <span class="flex items-center space-x-1.5">
+                    <i class="fa-solid fa-border-all text-pink-300 text-sm"></i>
+                    <span>Tous les produits</span>
+                  </span>
+                </template>
               </button>
             </template>
           </div>
@@ -1124,7 +1154,7 @@
               <option value="Clowth" class="bg-slate-900">Clowth (Vêtements)</option>
               <option value="Accessoires" class="bg-slate-900">Accessoires</option>
               <option value="Décoration" class="bg-slate-900">Décoration</option>
-              <option value="Connexion Orange / Ooredoo" class="bg-slate-900">Connexion Orange / Ooredoo</option>
+              <option value="Subscription" class="bg-slate-900">Subscription</option>
             </select>
           </div>
           <div>

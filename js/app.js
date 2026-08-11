@@ -4,7 +4,7 @@ document.addEventListener('alpine:init', () => {
   Alpine.data('app', () => ({
     // Catalog & Filter state
     products: [],
-    categories: ['All', 'Clowth', 'Accessoires', 'Décoration', 'Connexion Orange / Ooredoo'],
+    categories: ['All', 'Clowth', 'Accessoires', 'Décoration', 'Subscription'],
     activeCategory: 'All',
     searchQuery: '',
     priceFilter: 'all',
