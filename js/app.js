@@ -199,7 +199,7 @@ document.addEventListener('alpine:init', () => {
     // --- MULTI-DEVICE REAL-TIME CLOUD SYNC & BACKUP ---
     async syncWithCloud(showToastNotice = false) {
       try {
-        const cloudUrl = 'https://kvdb.io/9achech_store_v1/cloud_db';
+        const cloudUrl = 'https://jsonblob.com/api/jsonBlob/019ff210-8f48-7e35-8299-380fb1f0df5e';
         const response = await fetch(cloudUrl);
         if (response.ok) {
           const cloudData = await response.json();
@@ -254,7 +254,7 @@ document.addEventListener('alpine:init', () => {
 
     async pushToCloud() {
       try {
-        const cloudUrl = 'https://kvdb.io/9achech_store_v1/cloud_db';
+        const cloudUrl = 'https://jsonblob.com/api/jsonBlob/019ff210-8f48-7e35-8299-380fb1f0df5e';
         const payload = {
           products: this.products,
           users: this.users,
@@ -263,7 +263,7 @@ document.addEventListener('alpine:init', () => {
           lastSync: new Date().toISOString()
         };
         await fetch(cloudUrl, {
-          method: 'POST',
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
