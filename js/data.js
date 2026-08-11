@@ -26,6 +26,7 @@ const DEFAULT_PRODUCTS = [
     price: 89.00,
     sizes: ["S", "M", "L", "XL"],
     inStock: true,
+    stockQuantity: 12,
     isFeatured: true,
     wishlistCount: 0,
     cartCount: 0
@@ -40,6 +41,7 @@ const DEFAULT_PRODUCTS = [
     price: 219.00,
     sizes: ["M", "L", "XL"],
     inStock: true,
+    stockQuantity: 12,
     isFeatured: true,
     wishlistCount: 0,
     cartCount: 0
@@ -54,6 +56,7 @@ const DEFAULT_PRODUCTS = [
     price: 69.00,
     sizes: ["S", "M", "L", "XL"],
     inStock: true,
+    stockQuantity: 10,
     isFeatured: false,
     wishlistCount: 0,
     cartCount: 0
@@ -68,6 +71,7 @@ const DEFAULT_PRODUCTS = [
     price: 35.00,
     sizes: ["S", "M", "L", "XL"],
     inStock: true,
+    stockQuantity: 10,
     isFeatured: false,
     wishlistCount: 0,
     cartCount: 0
@@ -84,6 +88,7 @@ const DEFAULT_PRODUCTS = [
     price: 49.00,
     sizes: [],
     inStock: true,
+    stockQuantity: 12,
     isFeatured: true,
     wishlistCount: 0,
     cartCount: 0
@@ -98,6 +103,7 @@ const DEFAULT_PRODUCTS = [
     price: 39.00,
     sizes: [],
     inStock: true,
+    stockQuantity: 10,
     isFeatured: false,
     wishlistCount: 0,
     cartCount: 0
@@ -112,6 +118,7 @@ const DEFAULT_PRODUCTS = [
     price: 139.00,
     sizes: [],
     inStock: true,
+    stockQuantity: 12,
     isFeatured: true,
     wishlistCount: 0,
     cartCount: 0
@@ -126,6 +133,7 @@ const DEFAULT_PRODUCTS = [
     price: 29.00,
     sizes: [],
     inStock: true,
+    stockQuantity: 10,
     isFeatured: false,
     wishlistCount: 0,
     cartCount: 0
@@ -142,6 +150,7 @@ const DEFAULT_PRODUCTS = [
     price: 99.00,
     sizes: [],
     inStock: true,
+    stockQuantity: 12,
     isFeatured: true,
     wishlistCount: 0,
     cartCount: 0
@@ -156,6 +165,7 @@ const DEFAULT_PRODUCTS = [
     price: 39.00,
     sizes: [],
     inStock: true,
+    stockQuantity: 10,
     isFeatured: false,
     wishlistCount: 0,
     cartCount: 0
@@ -170,6 +180,7 @@ const DEFAULT_PRODUCTS = [
     price: 79.00,
     sizes: [],
     inStock: true,
+    stockQuantity: 12,
     isFeatured: true,
     wishlistCount: 0,
     cartCount: 0
@@ -186,6 +197,7 @@ const DEFAULT_PRODUCTS = [
     price: 25.00,
     sizes: [],
     inStock: true,
+    stockQuantity: 12,
     isFeatured: true,
     wishlistCount: 0,
     cartCount: 0
@@ -200,6 +212,7 @@ const DEFAULT_PRODUCTS = [
     price: 25.00,
     sizes: [],
     inStock: true,
+    stockQuantity: 12,
     isFeatured: true,
     wishlistCount: 0,
     cartCount: 0
@@ -214,6 +227,7 @@ const DEFAULT_PRODUCTS = [
     price: 10.00,
     sizes: [],
     inStock: true,
+    stockQuantity: 10,
     isFeatured: false,
     wishlistCount: 0,
     cartCount: 0
@@ -228,6 +242,7 @@ const DEFAULT_PRODUCTS = [
     price: 48.00,
     sizes: [],
     inStock: true,
+    stockQuantity: 12,
     isFeatured: true,
     wishlistCount: 0,
     cartCount: 0

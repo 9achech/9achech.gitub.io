@@ -14,6 +14,9 @@ document.addEventListener('alpine:init', () => {
     cart: [],
     wishlist: [],
     
+    // Orders state (Real Customer Submissions)
+    orders: [],
+
     // Auth & Users state
     users: [],
     currentUser: null,
@@ -54,6 +57,7 @@ document.addEventListener('alpine:init', () => {
       originalPrice: 0,
       price: 0,
       sizesInput: 'S, M, L, XL',
+      stockQuantity: 10,
       inStock: true,
       isFeatured: false
     },
@@ -79,6 +83,7 @@ document.addEventListener('alpine:init', () => {
       // Sync active cart & wishlist size selections
       this.$watch('cart', () => this.saveStorage());
       this.$watch('wishlist', () => this.saveStorage());
+      this.$watch('orders', () => this.saveStorage());
       this.$watch('products', () => {
         this.saveStorage();
         if (this.isAdminMode) {
@@ -97,10 +102,10 @@ document.addEventListener('alpine:init', () => {
 
     loadStorage() {
       // Auto-purge legacy fake cached data from browser LocalStorage
-      if (!localStorage.getItem('9achech_v3_real_stats')) {
+      if (!localStorage.getItem('9achech_v4_orders_stock')) {
         localStorage.removeItem('9achech_products');
         localStorage.removeItem('9achech_users');
-        localStorage.setItem('9achech_v3_real_stats', 'true');
+        localStorage.setItem('9achech_v4_orders_stock', 'true');
       }
 
       // Products
@@ -115,11 +120,13 @@ document.addEventListener('alpine:init', () => {
         this.products = JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
       }
 
-      // Ensure no legacy product counts remain
+      // Ensure all products have stockQuantity field
       this.products.forEach(p => {
-        if (!storedProducts) {
-          p.wishlistCount = 0;
-          p.cartCount = 0;
+        if (p.stockQuantity === undefined) {
+          p.stockQuantity = 10;
+        }
+        if (p.stockQuantity <= 0) {
+          p.inStock = false;
         }
       });
 
@@ -130,6 +137,10 @@ document.addEventListener('alpine:init', () => {
       // Wishlist
       const storedWishlist = localStorage.getItem('9achech_wishlist');
       this.wishlist = storedWishlist ? JSON.parse(storedWishlist) : [];
+
+      // Orders
+      const storedOrders = localStorage.getItem('9achech_orders');
+      this.orders = storedOrders ? JSON.parse(storedOrders) : [];
 
       // Users
       const storedUsers = localStorage.getItem('9achech_users');
@@ -171,6 +182,7 @@ document.addEventListener('alpine:init', () => {
       localStorage.setItem('9achech_products', JSON.stringify(this.products));
       localStorage.setItem('9achech_cart', JSON.stringify(this.cart));
       localStorage.setItem('9achech_wishlist', JSON.stringify(this.wishlist));
+      localStorage.setItem('9achech_orders', JSON.stringify(this.orders));
       localStorage.setItem('9achech_users', JSON.stringify(this.users));
       localStorage.setItem('9achech_currentUser', JSON.stringify(this.currentUser));
       localStorage.setItem('9achech_settings', JSON.stringify(this.settings));
@@ -477,22 +489,118 @@ document.addEventListener('alpine:init', () => {
       msg += `\n===============================\n`;
       msg += `💵 *Sous-total:* ${this.cartSubtotal().toFixed(2)} DT\n`;
       msg += `🚚 *Livraison:* ${this.settings.shippingFee.toFixed(2)} DT\n`;
-      msg += `💰 *TOTAL À PAYER:* *${this.cartFinalTotal().toFixed(2)} DT*\n`;
-      msg += `===============================\n`;
-      msg += `Merci pour votre confiance avec 9achech ! 🚀`;
-
       const encodedMsg = encodeURIComponent(msg);
-      // Clean whatsapp phone number
       const cleanPhone = this.settings.whatsappNumber.replace(/[^0-9]/g, '');
       const waUrl = `https://wa.me/${cleanPhone}?text=${encodedMsg}`;
+
+      // Save order to store history
+      const newOrder = {
+        id: "CMD-" + Math.floor(100000 + Math.random() * 900000),
+        customerName: name,
+        customerPhone: phone,
+        address: `${address}, ${city}`,
+        notes: notes || '',
+        items: JSON.parse(JSON.stringify(this.cart)),
+        subtotal: this.cartSubtotal(),
+        shippingFee: this.settings.shippingFee,
+        total: this.cartFinalTotal(),
+        status: 'pending', // 'pending' | 'delivered' | 'cancelled'
+        createdAt: new Date().toLocaleDateString('fr-FR') + ' à ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+      };
+      this.orders.unshift(newOrder);
 
       // Clear cart & close modal
       this.cart = [];
       this.isCheckoutModalOpen = false;
-      this.showToast("Redirection vers WhatsApp en cours...", "success");
+      this.showToast("Commande enregistrée ! Redirection vers WhatsApp...", "success");
 
       // Redirect
       window.open(waUrl, '_blank');
+    },
+
+    // --- ORDER STATUS & STOCK INVENTORY ENGINE ---
+    updateOrderStatus(orderId, newStatus) {
+      const order = this.orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      const prevStatus = order.status;
+      if (prevStatus === newStatus) return;
+
+      // DELIVERED STATUS: Deduct stock quantity
+      if (newStatus === 'delivered') {
+        order.items.forEach(item => {
+          const p = this.products.find(prod => prod.id === item.product.id);
+          if (p) {
+            const currentStock = (p.stockQuantity !== undefined) ? p.stockQuantity : 10;
+            p.stockQuantity = Math.max(0, currentStock - item.quantity);
+            if (p.stockQuantity <= 0) {
+              p.stockQuantity = 0;
+              p.inStock = false; // Mark as SOLDOUT
+            }
+          }
+        });
+        order.status = 'delivered';
+        this.showToast(`Commande ${order.id} LIVRÉE ! Le stock a été déduit.`, 'success');
+      } 
+      // CANCELLED STATUS: Restore stock if previously delivered
+      else if (newStatus === 'cancelled') {
+        if (prevStatus === 'delivered') {
+          order.items.forEach(item => {
+            const p = this.products.find(prod => prod.id === item.product.id);
+            if (p) {
+              p.stockQuantity = (p.stockQuantity || 0) + item.quantity;
+              if (p.stockQuantity > 0) {
+                p.inStock = true; // Restore stock availability
+              }
+            }
+          });
+        }
+        order.status = 'cancelled';
+        this.showToast(`Commande ${order.id} ANNULÉE. Stock réintégré.`, 'info');
+      } 
+      // PENDING STATUS: Reset stock if previously delivered
+      else if (newStatus === 'pending') {
+        if (prevStatus === 'delivered') {
+          order.items.forEach(item => {
+            const p = this.products.find(prod => prod.id === item.product.id);
+            if (p) {
+              p.stockQuantity = (p.stockQuantity || 0) + item.quantity;
+              if (p.stockQuantity > 0) {
+                p.inStock = true;
+              }
+            }
+          });
+        }
+        order.status = 'pending';
+        this.showToast(`Commande ${order.id} remise En Attente.`, 'info');
+      }
+
+      this.saveStorage();
+      if (this.isAdminMode) {
+        this.$nextTick(() => this.renderAdminCharts());
+      }
+    },
+
+    getPendingOrdersCount() {
+      return this.orders.filter(o => o.status === 'pending').length;
+    },
+
+    getDeliveredOrdersCount() {
+      return this.orders.filter(o => o.status === 'delivered').length;
+    },
+
+    getCancelledOrdersCount() {
+      return this.orders.filter(o => o.status === 'cancelled').length;
+    },
+
+    getTotalDeliveredRevenue() {
+      return this.orders
+        .filter(o => o.status === 'delivered')
+        .reduce((sum, o) => sum + (o.total || 0), 0);
+    },
+
+    getSoldOutProductsCount() {
+      return this.products.filter(p => !p.inStock || p.stockQuantity <= 0).length;
     },
 
     // --- ADMIN PRODUCT CRUD ---
@@ -507,6 +615,7 @@ document.addEventListener('alpine:init', () => {
         originalPrice: 100,
         price: 79,
         sizesInput: 'S, M, L, XL',
+        stockQuantity: 10,
         inStock: true,
         isFeatured: false
       };
@@ -524,6 +633,7 @@ document.addEventListener('alpine:init', () => {
         originalPrice: product.originalPrice || product.price,
         price: product.price,
         sizesInput: product.sizes ? product.sizes.join(', ') : '',
+        stockQuantity: product.stockQuantity !== undefined ? product.stockQuantity : 10,
         inStock: product.inStock !== undefined ? product.inStock : true,
         isFeatured: product.isFeatured || false
       };
@@ -538,6 +648,8 @@ document.addEventListener('alpine:init', () => {
       }
 
       const sizes = form.sizesInput.split(',').map(s => s.trim()).filter(s => s !== '');
+      const qty = parseInt(form.stockQuantity) || 0;
+      const isAvailable = qty > 0 && form.inStock;
 
       if (this.isEditingExisting) {
         const idx = this.products.findIndex(p => p.id === form.id);
@@ -551,7 +663,8 @@ document.addEventListener('alpine:init', () => {
             originalPrice: parseFloat(form.originalPrice),
             price: parseFloat(form.price),
             sizes: sizes,
-            inStock: form.inStock,
+            stockQuantity: qty,
+            inStock: isAvailable,
             isFeatured: form.isFeatured
           };
           this.showToast("Produit mis à jour avec succès !", "success");
@@ -566,7 +679,8 @@ document.addEventListener('alpine:init', () => {
           originalPrice: parseFloat(form.originalPrice),
           price: parseFloat(form.price),
           sizes: sizes,
-          inStock: form.inStock,
+          stockQuantity: qty,
+          inStock: isAvailable,
           isFeatured: form.isFeatured,
           wishlistCount: 0,
           cartCount: 0

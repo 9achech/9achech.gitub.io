@@ -366,14 +366,21 @@
               <div class="relative w-full h-56 overflow-hidden rounded-t-2xl bg-slate-950/40">
                 <img :src="product.image" :alt="product.title" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
                 
-                <!-- Category Badge -->
-                <span class="absolute top-3 left-3 text-[10px] font-bold px-2.5 py-1 rounded-full text-white uppercase tracking-wider shadow-md"
-                      :class="getBadgeClass(product.category)"
-                      x-text="product.category">
-                </span>
+                <!-- Category Badge or SOLDOUT Badge -->
+                <template x-if="!product.inStock || product.stockQuantity <= 0">
+                  <span class="absolute top-3 left-3 bg-gradient-to-r from-rose-600 to-red-600 text-white font-black text-[10px] px-2.5 py-1 rounded-full uppercase tracking-wider shadow-lg animate-pulse z-10">
+                    ÉPUISÉ / SOLD OUT
+                  </span>
+                </template>
+                <template x-if="product.inStock && product.stockQuantity > 0">
+                  <span class="absolute top-3 left-3 text-[10px] font-bold px-2.5 py-1 rounded-full text-white uppercase tracking-wider shadow-md"
+                        :class="getBadgeClass(product.category)"
+                        x-text="product.category">
+                  </span>
+                </template>
 
                 <!-- Discount Tag if sale -->
-                <template x-if="product.originalPrice > product.price">
+                <template x-if="product.originalPrice > product.price && product.inStock && product.stockQuantity > 0">
                   <span class="absolute top-3 right-12 badge-sale text-[10px] font-black px-2 py-0.5 rounded-full text-white shadow-md">
                     <span x-text="'-' + Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) + '%'"></span>
                   </span>
@@ -387,7 +394,7 @@
                 </button>
 
                 <!-- Quick View Overlay Button -->
-                <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                <div class="absolute inset-0 bg-slate-950/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                   <button @click="openProductModal(product)" class="px-4 py-2 rounded-xl glass-button text-xs font-semibold">
                     <i class="fa-solid fa-eye mr-1.5"></i> Aperçu Rapide
                   </button>
@@ -397,7 +404,15 @@
               <!-- Card Content -->
               <div class="p-5 flex-grow flex flex-col justify-between">
                 <div>
-                  <h3 class="font-bold text-sm text-slate-100 line-clamp-1 mb-1 group-hover:text-purple-300 transition-colors" x-text="product.title"></h3>
+                  <div class="flex items-center justify-between mb-1">
+                    <h3 class="font-bold text-sm text-slate-100 line-clamp-1 group-hover:text-purple-300 transition-colors" x-text="product.title"></h3>
+                  </div>
+                  
+                  <div class="flex items-center justify-between text-[11px] mb-2">
+                    <span x-show="product.inStock && product.stockQuantity > 0" class="text-emerald-400 font-semibold" x-text="'En stock: ' + product.stockQuantity + ' un.'"></span>
+                    <span x-show="!product.inStock || product.stockQuantity <= 0" class="text-rose-400 font-bold">Rupture de stock</span>
+                  </div>
+
                   <p class="text-xs text-slate-400 line-clamp-2 mb-3 leading-relaxed" x-text="product.description"></p>
                   
                   <!-- Size Pills preview if clothes -->
@@ -421,9 +436,10 @@
                   </div>
 
                   <button @click="addToCart(product)" 
-                          class="px-3.5 py-2 rounded-xl glass-button text-xs font-semibold flex items-center space-x-1.5">
-                    <i class="fa-solid fa-cart-plus"></i>
-                    <span>Ajouter</span>
+                          :disabled="!product.inStock || product.stockQuantity <= 0"
+                          class="px-3.5 py-2 rounded-xl glass-button text-xs font-semibold flex items-center space-x-1.5 disabled:opacity-40 disabled:cursor-not-allowed">
+                    <i class="fa-solid" :class="!product.inStock || product.stockQuantity <= 0 ? 'fa-ban' : 'fa-cart-plus'"></i>
+                    <span x-text="!product.inStock || product.stockQuantity <= 0 ? 'Épuisé' : 'Ajouter'"></span>
                   </button>
                 </div>
 
@@ -473,56 +489,77 @@
       <!-- ADMIN TABS NAVIGATION -->
       <div class="flex space-x-2 border-b border-white/10 mb-8 overflow-x-auto">
         <button @click="adminTab = 'overview'; $nextTick(() => renderAdminCharts())" 
-                class="px-5 py-3 text-xs font-bold border-b-2 transition-all duration-200"
+                class="px-5 py-3 text-xs font-bold border-b-2 transition-all duration-200 flex items-center space-x-2 whitespace-nowrap"
                 :class="adminTab === 'overview' ? 'border-purple-500 text-purple-400' : 'border-transparent text-slate-400 hover:text-white'">
-          <i class="fa-solid fa-chart-pie mr-2"></i> Statistiques & Vue d'ensemble
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>Vue d'ensemble & Stats</span>
+        </button>
+
+        <button @click="adminTab = 'orders'" 
+                class="px-5 py-3 text-xs font-bold border-b-2 transition-all duration-200 flex items-center space-x-2 whitespace-nowrap"
+                :class="adminTab === 'orders' ? 'border-purple-500 text-purple-400' : 'border-transparent text-slate-400 hover:text-white'">
+          <i class="fa-solid fa-truck-ramp-box"></i>
+          <span>Gestion des Commandes (<span x-text="orders.length"></span>)</span>
+          <span x-show="getPendingOrdersCount() > 0" 
+                class="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black text-[10px]" 
+                x-text="getPendingOrdersCount()">
+          </span>
         </button>
 
         <button @click="adminTab = 'products'" 
-                class="px-5 py-3 text-xs font-bold border-b-2 transition-all duration-200"
+                class="px-5 py-3 text-xs font-bold border-b-2 transition-all duration-200 flex items-center space-x-2 whitespace-nowrap"
                 :class="adminTab === 'products' ? 'border-purple-500 text-purple-400' : 'border-transparent text-slate-400 hover:text-white'">
-          <i class="fa-solid fa-boxes-stacked mr-2"></i> Gestion des Produits (<span x-text="products.length"></span>)
+          <i class="fa-solid fa-boxes-stacked"></i>
+          <span>Gestion des Produits (<span x-text="products.length"></span>)</span>
         </button>
 
         <button @click="adminTab = 'users'" 
-                class="px-5 py-3 text-xs font-bold border-b-2 transition-all duration-200"
+                class="px-5 py-3 text-xs font-bold border-b-2 transition-all duration-200 flex items-center space-x-2 whitespace-nowrap"
                 :class="adminTab === 'users' ? 'border-purple-500 text-purple-400' : 'border-transparent text-slate-400 hover:text-white'">
-          <i class="fa-solid fa-users mr-2"></i> Gestion Utilisateurs (<span x-text="users.length"></span>)
+          <i class="fa-solid fa-users"></i>
+          <span>Utilisateurs (<span x-text="users.length"></span>)</span>
         </button>
 
         <button @click="adminTab = 'settings'" 
-                class="px-5 py-3 text-xs font-bold border-b-2 transition-all duration-200"
+                class="px-5 py-3 text-xs font-bold border-b-2 transition-all duration-200 flex items-center space-x-2 whitespace-nowrap"
                 :class="adminTab === 'settings' ? 'border-purple-500 text-purple-400' : 'border-transparent text-slate-400 hover:text-white'">
-          <i class="fa-solid fa-sliders mr-2"></i> Paramètres WhatsApp & Magasin
+          <i class="fa-solid fa-sliders"></i>
+          <span>Paramètres</span>
         </button>
       </div>
 
       <!-- TAB 1: OVERVIEW & ANALYTICS -->
       <div x-show="adminTab === 'overview'">
         <!-- METRICS CARDS -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div class="glass-panel p-5 rounded-2xl border border-purple-500/20">
-            <p class="text-xs text-slate-400 font-medium">Total Catalogue</p>
-            <p class="text-2xl font-black text-white mt-1" x-text="products.length + ' Produits'"></p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+          <div class="glass-panel p-4 rounded-2xl border border-emerald-500/20">
+            <p class="text-[11px] text-slate-400 font-medium">Chiffre d'Affaires Livré</p>
+            <p class="text-xl font-black text-emerald-400 mt-1" x-text="getTotalDeliveredRevenue().toFixed(2) + ' DT'"></p>
+            <span class="text-[10px] text-emerald-300">Commandes livrées uniquement</span>
+          </div>
+
+          <div class="glass-panel p-4 rounded-2xl border border-amber-500/20">
+            <p class="text-[11px] text-slate-400 font-medium">Commandes En Attente</p>
+            <p class="text-xl font-black text-amber-400 mt-1" x-text="getPendingOrdersCount() + ' Commandes'"></p>
+            <span class="text-[10px] text-amber-300">À traiter / expédier</span>
+          </div>
+
+          <div class="glass-panel p-4 rounded-2xl border border-rose-500/20">
+            <p class="text-[11px] text-slate-400 font-medium">Produits Épuisés</p>
+            <p class="text-xl font-black text-rose-400 mt-1" x-text="getSoldOutProductsCount() + ' Articles'"></p>
+            <span class="text-[10px] text-rose-300">Stock = 0 / Sold Out</span>
+          </div>
+
+          <div class="glass-panel p-4 rounded-2xl border border-purple-500/20">
+            <p class="text-[11px] text-slate-400 font-medium">Total Catalogue</p>
+            <p class="text-xl font-black text-white mt-1" x-text="products.length + ' Produits'"></p>
             <span class="text-[10px] text-purple-300">4 Catégories actives</span>
           </div>
 
-          <div class="glass-panel p-5 rounded-2xl border border-pink-500/20">
-            <p class="text-xs text-slate-400 font-medium">Utilisateurs Enregistrés</p>
-            <p class="text-2xl font-black text-pink-400 mt-1" x-text="users.length + ' Comptes'"></p>
-            <span class="text-[10px] text-slate-400">Stockés en LocalStorage</span>
-          </div>
-
-          <div class="glass-panel p-5 rounded-2xl border border-cyan-500/20">
-            <p class="text-xs text-slate-400 font-medium">Valeur Totale Inventaire</p>
-            <p class="text-2xl font-black text-cyan-400 mt-1" x-text="products.reduce((acc, p) => acc + p.price, 0).toFixed(2) + ' DT'"></p>
-            <span class="text-[10px] text-cyan-300">Calculé sur le prix actuel</span>
-          </div>
-
-          <div class="glass-panel p-5 rounded-2xl border border-amber-500/20">
-            <p class="text-xs text-slate-400 font-medium">Favoris Totaux Accumulés</p>
-            <p class="text-2xl font-black text-amber-400 mt-1" x-text="totalWishlistLikes() + ' Likes'"></p>
-            <span class="text-[10px] text-amber-300">Basé sur les ajouts réels</span>
+          <div class="glass-panel p-4 rounded-2xl border border-cyan-500/20">
+            <p class="text-[11px] text-slate-400 font-medium">Utilisateurs Réels</p>
+            <p class="text-xl font-black text-cyan-400 mt-1" x-text="users.length + ' Comptes'"></p>
+            <span class="text-[10px] text-cyan-300">Inscrits en boutique</span>
           </div>
         </div>
 
@@ -560,10 +597,82 @@
         </div>
       </div>
 
+      <!-- TAB: GESTION DES COMMANDES & STOCKS -->
+      <div x-show="adminTab === 'orders'">
+        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h3 class="text-lg font-bold text-white">Gestion des Commandes & Impact Stock</h3>
+            <p class="text-xs text-slate-400">Validez les livraisons (déduit le stock), ou annulez les commandes (réintègre le stock).</p>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <template x-for="ord in orders" :key="ord.id">
+            <div class="glass-panel p-5 rounded-2xl border border-white/10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              
+              <!-- Order Client & Status -->
+              <div class="space-y-1 max-w-sm">
+                <div class="flex items-center space-x-2">
+                  <span class="font-extrabold text-sm text-purple-300" x-text="ord.id"></span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                        :class="ord.status === 'delivered' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : (ord.status === 'cancelled' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30')"
+                        x-text="ord.status === 'delivered' ? 'Livrée (Stock Déduit)' : (ord.status === 'cancelled' ? 'Annulée (Stock Réintégré)' : 'En attente')">
+                  </span>
+                </div>
+                <p class="text-xs font-bold text-white" x-text="ord.customerName"></p>
+                <p class="text-[11px] text-slate-300"><i class="fa-solid fa-phone mr-1 text-slate-400"></i><span x-text="ord.customerPhone"></span></p>
+                <p class="text-[11px] text-slate-400"><i class="fa-solid fa-location-dot mr-1 text-slate-400"></i><span x-text="ord.address"></span></p>
+                <p class="text-[10px] text-slate-500" x-text="'Passée le: ' + ord.createdAt"></p>
+              </div>
+
+              <!-- Ordered Items breakdown -->
+              <div class="flex-1 max-w-md bg-slate-950/40 p-3 rounded-xl border border-white/5 space-y-1 text-xs">
+                <p class="text-[10px] font-bold uppercase text-slate-400 border-b border-white/10 pb-1">Articles Commandés:</p>
+                <template x-for="item in ord.items" :key="item.product.id">
+                  <div class="flex justify-between items-center text-[11px]">
+                    <span class="text-white truncate max-w-[200px]" x-text="item.product.title + (item.size ? ' (' + item.size + ')' : '')"></span>
+                    <span class="text-purple-300 font-bold" x-text="'Qté: ' + item.quantity + ' x ' + item.product.price.toFixed(2) + ' DT'"></span>
+                  </div>
+                </template>
+                <div class="pt-1 border-t border-white/10 flex justify-between font-bold text-white text-xs">
+                  <span>Total (Livraison incluse):</span>
+                  <span class="text-cyan-400" x-text="ord.total.toFixed(2) + ' DT'"></span>
+                </div>
+              </div>
+
+              <!-- Admin Status Control Actions -->
+              <div class="flex flex-col sm:flex-row lg:flex-col gap-2">
+                <button @click="updateOrderStatus(ord.id, 'delivered')" 
+                        :disabled="ord.status === 'delivered'"
+                        class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center space-x-1.5"
+                        :class="ord.status === 'delivered' ? 'bg-emerald-500/20 text-emerald-400 opacity-60 cursor-default' : 'glass-button border-emerald-500/50 hover:bg-emerald-600'">
+                  <i class="fa-solid fa-truck-fast"></i>
+                  <span>Marquer Livrée (Déduire Stock)</span>
+                </button>
+
+                <button @click="updateOrderStatus(ord.id, 'cancelled')" 
+                        :disabled="ord.status === 'cancelled'"
+                        class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center space-x-1.5"
+                        :class="ord.status === 'cancelled' ? 'bg-rose-500/20 text-rose-400 opacity-60 cursor-default' : 'glass-button-secondary border-rose-500/30 text-rose-300 hover:bg-rose-500/30'">
+                  <i class="fa-solid fa-ban"></i>
+                  <span>Annuler (Réintégrer Stock)</span>
+                </button>
+              </div>
+
+            </div>
+          </template>
+
+          <div x-show="orders.length === 0" class="py-12 text-center glass-panel rounded-3xl">
+            <i class="fa-solid fa-inbox text-4xl text-slate-600 mb-2"></i>
+            <p class="text-xs text-slate-400">Aucune commande enregistrée pour le moment.</p>
+          </div>
+        </div>
+      </div>
+
       <!-- TAB 2: PRODUCT MANAGEMENT -->
       <div x-show="adminTab === 'products'">
         <div class="flex items-center justify-between mb-6">
-          <h3 class="text-lg font-bold text-white">Catalogue des Produits</h3>
+          <h3 class="text-lg font-bold text-white">Catalogue des Produits & Inventaire</h3>
           <button @click="openAddProductModal()" class="px-4 py-2.5 rounded-xl glass-button text-xs font-bold flex items-center space-x-2">
             <i class="fa-solid fa-plus"></i>
             <span>Nouveau Produit</span>
@@ -578,6 +687,7 @@
                 <tr>
                   <th class="py-3.5 px-4">Produit</th>
                   <th class="py-3.5 px-4">Catégorie</th>
+                  <th class="py-3.5 px-4">Stock Restant</th>
                   <th class="py-3.5 px-4">Prix Original</th>
                   <th class="py-3.5 px-4">Prix Promo</th>
                   <th class="py-3.5 px-4">Tailles</th>
@@ -596,6 +706,12 @@
                     </td>
                     <td class="py-3 px-4">
                       <span class="px-2 py-1 rounded-full text-[10px] font-bold text-white" :class="getBadgeClass(prod.category)" x-text="prod.category"></span>
+                    </td>
+                    <td class="py-3 px-4">
+                      <span class="px-2.5 py-1 rounded-full text-[10px] font-bold"
+                            :class="(!prod.inStock || prod.stockQuantity <= 0) ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'"
+                            x-text="(!prod.inStock || prod.stockQuantity <= 0) ? '0 (SOLDOUT)' : prod.stockQuantity + ' unités'">
+                      </span>
                     </td>
                     <td class="py-3 px-4 text-slate-400 line-through" x-text="prod.originalPrice ? prod.originalPrice.toFixed(2) + ' DT' : '-'"></td>
                     <td class="py-3 px-4 font-bold text-emerald-400" x-text="prod.price.toFixed(2) + ' DT'"></td>
@@ -1163,7 +1279,7 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-3 gap-4">
           <div>
             <label class="block text-slate-300 font-semibold mb-1">Prix Normal (DT)</label>
             <input type="number" step="0.5" x-model.number="productForm.originalPrice" class="w-full glass-input px-3.5 py-2.5 rounded-xl">
@@ -1171,6 +1287,10 @@
           <div>
             <label class="block text-slate-300 font-semibold mb-1">Prix Promo (DT) *</label>
             <input type="number" step="0.5" x-model.number="productForm.price" required class="w-full glass-input px-3.5 py-2.5 rounded-xl">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Quantité en Stock *</label>
+            <input type="number" min="0" x-model.number="productForm.stockQuantity" required class="w-full glass-input px-3.5 py-2.5 rounded-xl">
           </div>
         </div>
 
