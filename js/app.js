@@ -452,10 +452,11 @@ document.addEventListener('alpine:init', () => {
         this.showToast("Impossible de supprimer le compte administrateur principal", "error");
         return;
       }
-      if (confirm("Êtes-vous sûr de vouloir supprimer définitivement cet utilisateur ?")) {
-        this.users = this.users.filter(u => u.id !== userId);
-        this.showToast("Utilisateur supprimé avec succès", "info");
-        this.saveStorage();
+      this.users = this.users.filter(u => u.id !== userId);
+      this.saveStorage();
+      this.showToast("Utilisateur supprimé avec succès", "info");
+      if (this.isAdminMode) {
+        this.$nextTick(() => this.renderAdminCharts());
       }
     },
 
@@ -706,17 +707,20 @@ document.addEventListener('alpine:init', () => {
     },
 
     deleteProduct(productId) {
-      if (confirm("Êtes-vous sûr de vouloir supprimer ce produit ?")) {
-        this.products = this.products.filter(p => p.id !== productId);
-        this.showToast("Produit supprimé", "info");
+      this.products = this.products.filter(p => p.id !== productId);
+      this.saveStorage();
+      this.showToast("Produit supprimé du catalogue", "info");
+      if (this.isAdminMode) {
+        this.$nextTick(() => this.renderAdminCharts());
       }
     },
 
     deleteOrder(orderId) {
-      if (confirm("Êtes-vous sûr de vouloir supprimer cette commande ?")) {
-        this.orders = this.orders.filter(o => o.id !== orderId);
-        this.showToast("Commande supprimée de la liste", "info");
-        this.saveStorage();
+      this.orders = this.orders.filter(o => o.id !== orderId);
+      this.saveStorage();
+      this.showToast("Commande supprimée de la liste", "info");
+      if (this.isAdminMode) {
+        this.$nextTick(() => this.renderAdminCharts());
       }
     },
 
