@@ -799,11 +799,17 @@
                     </td>
                     <td class="py-3 px-4">
                       <template x-if="usr.username !== 'ghassen'">
-                        <button @click="toggleBlockUser(usr)" 
-                                class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200"
-                                :class="usr.status === 'blocked' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/40'">
-                          <span x-text="usr.status === 'blocked' ? 'Débloquer' : 'Bloquer'"></span>
-                        </button>
+                        <div class="flex items-center space-x-2">
+                          <button @click="toggleBlockUser(usr)" 
+                                  class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200"
+                                  :class="usr.status === 'blocked' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/40' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/40'">
+                            <span x-text="usr.status === 'blocked' ? 'Débloquer' : 'Bloquer'"></span>
+                          </button>
+                          <button @click="deleteUser(usr.id)" 
+                                  class="px-3 py-1.5 rounded-lg text-xs font-semibold glass-button-secondary text-rose-400 border border-rose-500/20 hover:bg-rose-500/30">
+                            <i class="fa-solid fa-trash-can mr-1"></i> Supprimer
+                          </button>
+                        </div>
                       </template>
                     </td>
                   </tr>

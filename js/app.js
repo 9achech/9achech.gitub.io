@@ -446,6 +446,19 @@ document.addEventListener('alpine:init', () => {
       this.showToast(`Statut de ${user.username} : ${user.status.toUpperCase()}`, "info");
     },
 
+    deleteUser(userId) {
+      const user = this.users.find(u => u.id === userId);
+      if (user && user.username === DEFAULT_ADMIN.username) {
+        this.showToast("Impossible de supprimer le compte administrateur principal", "error");
+        return;
+      }
+      if (confirm("Êtes-vous sûr de vouloir supprimer définitivement cet utilisateur ?")) {
+        this.users = this.users.filter(u => u.id !== userId);
+        this.showToast("Utilisateur supprimé avec succès", "info");
+        this.saveStorage();
+      }
+    },
+
     // --- WHATSAPP CHECKOUT ENGINE ---
     openCheckoutModal() {
       if (this.cart.length === 0) {
