@@ -877,7 +877,7 @@ document.addEventListener('alpine:init', () => {
       if (this.isEditingExisting) {
         const idx = this.products.findIndex(p => p.id === form.id);
         if (idx > -1) {
-          this.products[idx] = {
+          const updatedProduct = {
             ...this.products[idx],
             title: form.title,
             category: form.category,
@@ -890,11 +890,13 @@ document.addEventListener('alpine:init', () => {
             inStock: isAvailable,
             isFeatured: form.isFeatured
           };
+          this.products.splice(idx, 1, updatedProduct);
+          this.products = [...this.products];
           this.showToast("Produit mis à jour avec succès !", "success");
         }
       } else {
         const newProduct = {
-          id: form.id,
+          id: form.id || ("p_" + Date.now()),
           title: form.title,
           category: form.category,
           description: form.description,
@@ -909,9 +911,11 @@ document.addEventListener('alpine:init', () => {
           cartCount: 0
         };
         this.products.unshift(newProduct);
+        this.products = [...this.products];
         this.showToast("Nouveau produit ajouté à la boutique !", "success");
       }
 
+      this.saveStorage();
       this.isProductEditModalOpen = false;
     },
 
