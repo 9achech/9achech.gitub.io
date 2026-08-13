@@ -610,6 +610,7 @@ document.addEventListener('alpine:init', () => {
 
       this.users.push(newUser);
       this.currentUser = newUser;
+      this.saveStorage();
       this.isAdminMode = false;
       this.isAuthOpen = false;
       this.signupForm = { name: '', username: '', email: '', password: '' };
