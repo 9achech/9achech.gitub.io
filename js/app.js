@@ -861,6 +861,16 @@ document.addEventListener('alpine:init', () => {
         isFeatured: product.isFeatured || false
       };
       this.isProductEditModalOpen = true;
+    handleProductImageUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.productForm.image = e.target.result;
+        this.showToast("Image chargée avec succès !", "info");
+      };
+      reader.readAsDataURL(file);
     },
 
     saveProductForm() {

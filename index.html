@@ -1323,19 +1323,35 @@
         </div>
 
         <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-slate-300 font-semibold mb-1">Catégorie *</label>
-            <select x-model="productForm.category" class="w-full glass-input px-3 py-2.5 rounded-xl">
-              <option value="Clowth" class="bg-slate-900">Clowth (Vêtements)</option>
-              <option value="Accessoires" class="bg-slate-900">Accessoires</option>
-              <option value="Décoration" class="bg-slate-900">Décoration</option>
-              <option value="Subscription" class="bg-slate-900">Subscription</option>
-            </select>
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">Catégorie *</label>
+          <select x-model="productForm.category" class="w-full glass-input px-3 py-2.5 rounded-xl">
+            <option value="Clowth" class="bg-slate-900">Clowth (Vêtements)</option>
+            <option value="Accessoires" class="bg-slate-900">Accessoires</option>
+            <option value="Décoration" class="bg-slate-900">Décoration</option>
+            <option value="Subscription" class="bg-slate-900">Subscription</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">Image du Produit (URL ou Fichier d'appareil)</label>
+          <div class="space-y-2">
+            <input type="text" x-model="productForm.image" placeholder="https://... ou collez un lien d'image" class="w-full glass-input px-3.5 py-2.5 rounded-xl">
+            <div class="flex items-center space-x-3">
+              <label class="px-3 py-2 rounded-xl glass-button-secondary text-xs cursor-pointer inline-flex items-center space-x-2">
+                <i class="fa-solid fa-cloud-arrow-up text-purple-400"></i>
+                <span>Importer un fichier d'image</span>
+                <input type="file" accept="image/*" @change="handleProductImageUpload($event)" class="hidden">
+              </label>
+              <template x-if="productForm.image">
+                <div class="flex items-center space-x-2">
+                  <img :src="productForm.image" class="w-9 h-9 object-cover rounded-lg border border-purple-500/50">
+                  <span class="text-[10px] text-emerald-400 font-medium"><i class="fa-solid fa-circle-check"></i> Prête</span>
+                </div>
+              </template>
+            </div>
           </div>
-          <div>
-            <label class="block text-slate-300 font-semibold mb-1">URL de l'image</label>
-            <input type="url" x-model="productForm.image" required class="w-full glass-input px-3.5 py-2.5 rounded-xl">
-          </div>
+        </div>
         </div>
 
         <div class="grid grid-cols-3 gap-4">
