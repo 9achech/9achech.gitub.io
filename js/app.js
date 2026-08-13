@@ -157,17 +157,9 @@ document.addEventListener('alpine:init', () => {
       const storedOrders = localStorage.getItem('9achech_orders');
       this.orders = storedOrders ? JSON.parse(storedOrders) : [];
 
-      // Users
-      const storedUsers = localStorage.getItem('9achech_users');
-      if (storedUsers) {
-        try {
-          this.users = JSON.parse(storedUsers);
-        } catch (e) {
-          this.users = [];
-        }
-      } else {
-        this.users = [];
-      }
+      // Users array is strictly loaded from server database API (never cached in localStorage)
+      localStorage.removeItem('9achech_users');
+      this.users = [];
 
       // Current User & Admin Session
       const storedUser = localStorage.getItem('9achech_currentUser');
@@ -198,7 +190,7 @@ document.addEventListener('alpine:init', () => {
       localStorage.setItem('9achech_cart', JSON.stringify(this.cart));
       localStorage.setItem('9achech_wishlist', JSON.stringify(this.wishlist));
       localStorage.setItem('9achech_orders', JSON.stringify(this.orders));
-      localStorage.setItem('9achech_users', JSON.stringify(this.users));
+      localStorage.removeItem('9achech_users');
       localStorage.setItem('9achech_currentUser', JSON.stringify(this.currentUser));
       localStorage.setItem('9achech_settings', JSON.stringify(this.settings));
 
