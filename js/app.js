@@ -515,6 +515,20 @@ document.addEventListener('alpine:init', () => {
         }
         this.showToast("Ajouté aux favoris ❤️", "success");
       }
+
+      // Sync user's wishlist into currentUser and users list
+      if (this.currentUser) {
+        this.currentUser.wishlist = [...this.wishlist];
+        const userIdx = this.users.findIndex(u => u.username === this.currentUser.username || (u.id && u.id === this.currentUser.id));
+        if (userIdx !== -1) {
+          this.users[userIdx].wishlist = [...this.wishlist];
+          this.users = [...this.users];
+        }
+      }
+
+      this.products = [...this.products];
+      this.saveStorage();
+      this.pushToCloud(true);
     },
 
     isInWishlist(productId) {

@@ -712,6 +712,7 @@
                   <th class="py-3.5 px-4">Stock Restant</th>
                   <th class="py-3.5 px-4">Prix Original</th>
                   <th class="py-3.5 px-4">Prix Promo</th>
+                  <th class="py-3.5 px-4">Favoris ❤️</th>
                   <th class="py-3.5 px-4">Tailles</th>
                   <th class="py-3.5 px-4">Actions</th>
                 </tr>
@@ -737,6 +738,12 @@
                     </td>
                     <td class="py-3 px-4 text-slate-400 line-through" x-text="prod.originalPrice ? prod.originalPrice.toFixed(2) + ' DT' : '-'"></td>
                     <td class="py-3 px-4 font-bold text-emerald-400" x-text="prod.price.toFixed(2) + ' DT'"></td>
+                    <td class="py-3 px-4">
+                      <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-pink-500/20 text-pink-400 border border-pink-500/30 flex items-center space-x-1 w-fit">
+                        <i class="fa-solid fa-heart text-[10px]"></i>
+                        <span x-text="(prod.wishlistCount || 0) + ' Likes'"></span>
+                      </span>
+                    </td>
                     <td class="py-3 px-4 text-slate-300" x-text="prod.sizes && prod.sizes.length > 0 ? prod.sizes.join(', ') : 'N/A'"></td>
                     <td class="py-3 px-4">
                       <div class="flex items-center space-x-2">
