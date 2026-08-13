@@ -64,6 +64,7 @@ document.addEventListener('alpine:init', () => {
 
     // Settings
     settings: DEFAULT_SETTINGS,
+    isSyncingFromCloud: false,
 
     // Toast Alert
     toast: {
@@ -83,23 +84,25 @@ document.addEventListener('alpine:init', () => {
       // Initialize Firebase Real-Time Firestore Listener
       this.initFirebaseRealtimeSync();
 
-      // Start Real-Time Multi-Device Cloud Sync (PC ↔ Mobile)
-      this.syncWithCloud();
-      setInterval(() => this.syncWithCloud(), 8000);
-
       // Sync active cart & wishlist size selections
       this.$watch('cart', () => this.saveStorage());
       this.$watch('wishlist', () => this.saveStorage());
-      this.$watch('orders', () => this.saveStorage());
+      this.$watch('orders', () => {
+        if (!this.isSyncingFromCloud) this.saveStorage();
+      });
       this.$watch('products', () => {
-        this.saveStorage();
+        if (!this.isSyncingFromCloud) this.saveStorage();
         if (this.isAdminMode) {
           this.$nextTick(() => this.renderAdminCharts());
         }
       });
-      this.$watch('users', () => this.saveStorage());
+      this.$watch('users', () => {
+        if (!this.isSyncingFromCloud) this.saveStorage();
+      });
       this.$watch('currentUser', () => this.saveStorage());
-      this.$watch('settings', () => this.saveStorage());
+      this.$watch('settings', () => {
+        if (!this.isSyncingFromCloud) this.saveStorage();
+      });
       this.$watch('isAdminMode', (val) => {
         if (val) {
           this.$nextTick(() => this.renderAdminCharts());
@@ -222,6 +225,7 @@ document.addEventListener('alpine:init', () => {
     applyCloudData(cloudData) {
       if (!cloudData || typeof cloudData !== 'object') return;
 
+      this.isSyncingFromCloud = true;
       let needsPushBackToCloud = false;
 
       // Sync Products (Cloud/Admin is single source of truth for products)
@@ -279,6 +283,10 @@ document.addEventListener('alpine:init', () => {
 
       this.saveStorage(false);
 
+      this.$nextTick(() => {
+        this.isSyncingFromCloud = false;
+      });
+
       if (needsPushBackToCloud) {
         console.log("🔄 Syncing local users/orders up to Firebase...");
         this.pushToCloud();
@@ -298,26 +306,12 @@ document.addEventListener('alpine:init', () => {
         } catch (err) {
           console.warn("Firebase manual sync error:", err);
         }
-        return;
-      }
-
-      // Fallback JSONBlob polling sync
-      try {
-        const cloudUrl = 'https://jsonblob.com/api/jsonBlob/019ff210-8f48-7e35-8299-380fb1f0df5e';
-        const response = await fetch(cloudUrl);
-        if (response.ok) {
-          const cloudData = await response.json();
-          this.applyCloudData(cloudData);
-          if (showToastNotice) {
-            this.showToast("Synchronisation Cloud réussie (PC ↔ Mobile) ☁️", "success");
-          }
-        }
-      } catch (err) {
-        console.warn("Cloud sync offline fallback to LocalStorage", err);
       }
     },
 
     async pushToCloud() {
+      if (this.isSyncingFromCloud) return;
+
       const payload = {
         users: this.users,
         orders: this.orders,
@@ -335,22 +329,9 @@ document.addEventListener('alpine:init', () => {
         try {
           await window.db.collection('store').doc('data').set(payload, { merge: true });
           console.log("🔥 Pushed to Firebase Firestore successfully.");
-          return;
         } catch (err) {
           console.warn("Firebase push error:", err);
         }
-      }
-
-      // Fallback to JSONBlob
-      try {
-        const cloudUrl = 'https://jsonblob.com/api/jsonBlob/019ff210-8f48-7e35-8299-380fb1f0df5e';
-        await fetch(cloudUrl, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-      } catch (err) {
-        console.warn("Cloud push offline fallback", err);
       }
     },
 
