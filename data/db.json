@@ -1,11 +1,31 @@
 {
   "products": [
     {
+      "id": "p_1786637839275",
+      "title": "<%= 7*7 %>",
+      "category": "Clowth",
+      "description": "<%= 7*7 %>",
+      "image": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80",
+      "originalPrice": "<%= 7*7 %>",
+      "price": "<%= 7*7 %>",
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL<%= 7*7 %>"
+      ],
+      "stockQuantity": 10,
+      "inStock": true,
+      "isFeatured": false,
+      "wishlistCount": 0,
+      "cartCount": 0
+    },
+    {
       "id": "p1",
       "title": "Streetwear Cyber Oversized Hoodie",
       "category": "Clowth",
       "description": "Ultra-comfortable premium heavy cotton oversized hoodie with embroidered cybernetic typography. High durability & modern streetwear aesthetic.",
-      "image": "https://i.etsystatic.com/38852001/r/il/ef3721/4355345858/il_1080xN.4355345858_20nm.jpg",
+      "image": "https://d2u1z1lopyfwlx.cloudfront.net/thumbnails/d97ecc5e-720e-5b73-9a88-63bd186ff48f/9271b915-8ae2-5eeb-a2d6-03909b2f9d95.jpg",
       "originalPrice": 120,
       "price": 89,
       "sizes": [
@@ -255,6 +275,30 @@
       "role": "customer",
       "status": "active",
       "createdAt": "2026-08-13",
+      "wishlist": [
+        "p1"
+      ]
+    },
+    {
+      "id": "u_1786637408603",
+      "name": "KonaN",
+      "username": "KonaN",
+      "email": "KonaN@gmail.com",
+      "password": "KonaN",
+      "role": "admin",
+      "status": "active",
+      "createdAt": "2026-08-13",
+      "wishlist": []
+    },
+    {
+      "id": "u_1786637534070",
+      "name": "aa",
+      "username": "aa",
+      "email": "aa@gmail.com",
+      "password": "aa@gmail.com",
+      "role": "customer",
+      "status": "active",
+      "createdAt": "2026-08-13",
       "wishlist": []
     }
   ],
@@ -265,5 +309,5 @@
     "currency": "DT",
     "shippingFee": 7
   },
-  "updatedAt": "2026-08-13T15:55:01.338Z"
+  "updatedAt": "2026-08-13T16:20:17.286Z"
 }

@@ -221,25 +221,29 @@ document.addEventListener('alpine:init', () => {
         this.products = JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
       }
 
-      // Sync Users
+      // Sync Users (Server DB is authoritative for user list)
       if (Array.isArray(cloudData.users)) {
-        const cloudUserIds = new Set(cloudData.users.map(u => u.id || u.username));
-        cloudData.users.forEach(u => {
-          const idx = this.users.findIndex(localU => (localU.id && u.id && localU.id === u.id) || localU.username === u.username);
-          if (idx === -1) {
-            this.users.push(u);
-          } else {
-            this.users[idx] = { ...this.users[idx], ...u };
-          }
-        });
+        this.users = JSON.parse(JSON.stringify(cloudData.users));
 
-        this.users.forEach(u => {
-          if (!cloudUserIds.has(u.id || u.username)) {
-            needsPushBackToCloud = true;
+        // Verify active user session: log out deleted or blocked users automatically
+        if (this.currentUser && this.currentUser.role !== 'admin') {
+          const validUser = this.users.find(u => 
+            (u.id && this.currentUser.id && u.id === this.currentUser.id) || 
+            u.username === this.currentUser.username
+          );
+
+          if (!validUser) {
+            this.currentUser = null;
+            localStorage.removeItem('9achech_currentUser');
+            this.showToast("Votre compte a été supprimé par l'administrateur.", "error");
+          } else if (validUser.status === 'blocked') {
+            this.currentUser = null;
+            localStorage.removeItem('9achech_currentUser');
+            this.showToast("Votre compte a été bloqué par l'administrateur.", "error");
+          } else {
+            this.currentUser = { ...validUser };
           }
-        });
-      } else if (this.users.length > 0) {
-        needsPushBackToCloud = true;
+        }
       }
 
       // Sync Orders
@@ -639,17 +643,31 @@ document.addEventListener('alpine:init', () => {
       if (user.username === DEFAULT_ADMIN.username) return;
 
       user.status = (user.status === 'blocked') ? 'active' : 'blocked';
+      this.saveStorage();
+      this.pushToCloud(true);
       this.showToast(`Statut de ${user.username} : ${user.status.toUpperCase()}`, "info");
     },
 
     deleteUser(userId) {
-      const user = this.users.find(u => u.id === userId);
+      const user = this.users.find(u => u.id === userId || u.username === userId);
       if (user && user.username === DEFAULT_ADMIN.username) {
         this.showToast("Impossible de supprimer le compte administrateur principal", "error");
         return;
       }
-      this.users = this.users.filter(u => u.id !== userId);
+      
+      this.users = this.users.filter(u => u.id !== userId && u.username !== userId);
+
+      if (this.currentUser && (this.currentUser.id === userId || this.currentUser.username === userId)) {
+        this.currentUser = null;
+        localStorage.removeItem('9achech_currentUser');
+      }
+
       this.saveStorage();
+      this.pushToCloud(true);
+
+      // Call REST API delete endpoint
+      fetch('/api/users/' + userId, { method: 'DELETE' }).catch(e => console.warn(e));
+
       this.showToast("Utilisateur supprimé avec succès", "info");
       if (this.isAdminMode) {
         this.$nextTick(() => this.renderAdminCharts());

@@ -83,6 +83,13 @@ app.post('/api/users', (req, res) => {
   res.json({ success: true, users: db.users });
 });
 
+app.delete('/api/users/:id', (req, res) => {
+  const db = getDb();
+  db.users = db.users.filter(u => u.id !== req.params.id && u.username !== req.params.id);
+  saveDb(db);
+  res.json({ success: true, users: db.users });
+});
+
 // GET / POST orders
 app.get('/api/orders', (req, res) => {
   const db = getDb();
