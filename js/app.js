@@ -80,6 +80,9 @@ document.addEventListener('alpine:init', () => {
     init() {
       this.loadStorage();
 
+      // Initialize Firebase Real-Time Firestore Listener
+      this.initFirebaseRealtimeSync();
+
       // Start Real-Time Multi-Device Cloud Sync (PC ↔ Mobile)
       this.syncWithCloud();
       setInterval(() => this.syncWithCloud(), 8000);
@@ -196,55 +199,97 @@ document.addEventListener('alpine:init', () => {
       }
     },
 
-    // --- MULTI-DEVICE REAL-TIME CLOUD SYNC & BACKUP ---
+    // --- MULTI-DEVICE REAL-TIME CLOUD SYNC (FIREBASE FIRESTORE) ---
+    initFirebaseRealtimeSync() {
+      if (window.isFirebaseActive && window.db) {
+        try {
+          window.db.collection('store').doc('data').onSnapshot((doc) => {
+            if (doc.exists) {
+              const cloudData = doc.data();
+              this.applyCloudData(cloudData);
+            } else {
+              this.pushToCloud();
+            }
+          }, (err) => {
+            console.warn("Firestore snapshot listener error:", err);
+          });
+        } catch (e) {
+          console.warn("Firebase snapshot error:", e);
+        }
+      }
+    },
+
+    applyCloudData(cloudData) {
+      if (!cloudData || typeof cloudData !== 'object') return;
+
+      // Sync Users
+      if (Array.isArray(cloudData.users)) {
+        const existingUserIds = new Set(this.users.map(u => u.id || u.username));
+        cloudData.users.forEach(u => {
+          if (!existingUserIds.has(u.id || u.username)) {
+            this.users.push(u);
+          } else {
+            const idx = this.users.findIndex(localU => (localU.id && u.id && localU.id === u.id) || localU.username === u.username);
+            if (idx !== -1) {
+              this.users[idx] = { ...this.users[idx], ...u };
+            }
+          }
+        });
+      }
+
+      // Sync Orders
+      if (Array.isArray(cloudData.orders)) {
+        const existingOrderIds = new Set(this.orders.map(o => o.id));
+        cloudData.orders.forEach(o => {
+          if (!existingOrderIds.has(o.id)) {
+            this.orders.unshift(o);
+          } else {
+            const localOrd = this.orders.find(localO => localO.id === o.id);
+            if (localOrd && localOrd.status !== o.status) {
+              localOrd.status = o.status;
+            }
+          }
+        });
+      }
+
+      // Sync Products
+      if (Array.isArray(cloudData.products) && cloudData.products.length > 0) {
+        this.products = cloudData.products;
+      }
+
+      // Sync Settings
+      if (cloudData.settings) {
+        this.settings = { ...this.settings, ...cloudData.settings };
+      }
+
+      this.saveStorage(false);
+    },
+
     async syncWithCloud(showToastNotice = false) {
+      if (window.isFirebaseActive && window.db) {
+        try {
+          const docRef = await window.db.collection('store').doc('data').get();
+          if (docRef.exists) {
+            this.applyCloudData(docRef.data());
+            if (showToastNotice) {
+              this.showToast("Synchronisation Firebase Firestore réussie (PC ↔ Mobile) 🔥", "success");
+            }
+          }
+        } catch (err) {
+          console.warn("Firebase manual sync error:", err);
+        }
+        return;
+      }
+
+      // Fallback JSONBlob polling sync
       try {
         const cloudUrl = 'https://jsonblob.com/api/jsonBlob/019ff210-8f48-7e35-8299-380fb1f0df5e';
         const response = await fetch(cloudUrl);
         if (response.ok) {
           const cloudData = await response.json();
-          if (cloudData && typeof cloudData === 'object') {
-            // Merge users (unique by id/username)
-            if (Array.isArray(cloudData.users)) {
-              const existingUserIds = new Set(this.users.map(u => u.id || u.username));
-              cloudData.users.forEach(u => {
-                if (!existingUserIds.has(u.id || u.username)) {
-                  this.users.push(u);
-                }
-              });
-            }
-
-            // Merge orders (unique by id)
-            if (Array.isArray(cloudData.orders)) {
-              const existingOrderIds = new Set(this.orders.map(o => o.id));
-              cloudData.orders.forEach(o => {
-                if (!existingOrderIds.has(o.id)) {
-                  this.orders.unshift(o);
-                } else {
-                  const localOrd = this.orders.find(localO => localO.id === o.id);
-                  if (localOrd && localOrd.status !== o.status) {
-                    localOrd.status = o.status;
-                  }
-                }
-              });
-            }
-
-            // Sync product stocks
-            if (Array.isArray(cloudData.products)) {
-              cloudData.products.forEach(cloudP => {
-                const localP = this.products.find(p => p.id === cloudP.id);
-                if (localP) {
-                  if (cloudP.stockQuantity !== undefined) localP.stockQuantity = cloudP.stockQuantity;
-                  if (cloudP.inStock !== undefined) localP.inStock = cloudP.inStock;
-                  if (cloudP.wishlistCount !== undefined) localP.wishlistCount = cloudP.wishlistCount;
-                }
-              });
-            }
-
-            this.saveStorage(false);
-            if (showToastNotice) {
-              this.showToast("Synchronisation Cloud réussie (PC ↔ Mobile) ☁️", "success");
-            }
+          this.applyCloudData(cloudData);
+          if (showToastNotice) {
+            this.showToast("Synchronisation Cloud réussie (PC ↔ Mobile) ☁️", "success");
           }
         }
       } catch (err) {
@@ -253,15 +298,27 @@ document.addEventListener('alpine:init', () => {
     },
 
     async pushToCloud() {
+      const payload = {
+        products: this.products,
+        users: this.users,
+        orders: this.orders,
+        settings: this.settings,
+        lastSync: new Date().toISOString()
+      };
+
+      if (window.isFirebaseActive && window.db) {
+        try {
+          await window.db.collection('store').doc('data').set(payload, { merge: true });
+          console.log("🔥 Pushed to Firebase Firestore successfully.");
+          return;
+        } catch (err) {
+          console.warn("Firebase push error:", err);
+        }
+      }
+
+      // Fallback to JSONBlob
       try {
         const cloudUrl = 'https://jsonblob.com/api/jsonBlob/019ff210-8f48-7e35-8299-380fb1f0df5e';
-        const payload = {
-          products: this.products,
-          users: this.users,
-          orders: this.orders,
-          settings: this.settings,
-          lastSync: new Date().toISOString()
-        };
         await fetch(cloudUrl, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
