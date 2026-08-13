@@ -320,7 +320,7 @@ document.addEventListener('alpine:init', () => {
       }
     },
 
-    async pushToCloud() {
+    async pushToCloud(forcePushProducts = false) {
       if (this.isSyncingFromCloud) return;
 
       const payload = {
@@ -330,8 +330,8 @@ document.addEventListener('alpine:init', () => {
         lastSync: new Date().toISOString()
       };
 
-      // Only Admin (or when no products exist yet) can overwrite products in Cloud
-      if (this.isAdminMode || !window.hasSyncedProductsOnce) {
+      // Push products if Admin mode, explicit force flag, or initial sync
+      if (this.isAdminMode || forcePushProducts || !window.hasSyncedProductsOnce) {
         payload.products = this.products;
         window.hasSyncedProductsOnce = true;
       }
@@ -920,12 +920,14 @@ document.addEventListener('alpine:init', () => {
       }
 
       this.saveStorage();
+      this.pushToCloud(true);
       this.isProductEditModalOpen = false;
     },
 
     deleteProduct(productId) {
       this.products = this.products.filter(p => p.id !== productId);
       this.saveStorage();
+      this.pushToCloud(true);
       this.showToast("Produit supprimé du catalogue", "info");
       if (this.isAdminMode) {
         this.$nextTick(() => this.renderAdminCharts());
