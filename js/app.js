@@ -224,6 +224,11 @@ document.addEventListener('alpine:init', () => {
 
       let needsPushBackToCloud = false;
 
+      // Sync Products (Cloud/Admin is single source of truth for products)
+      if (Array.isArray(cloudData.products) && cloudData.products.length > 0) {
+        this.products = JSON.parse(JSON.stringify(cloudData.products));
+      }
+
       // Sync Users
       if (Array.isArray(cloudData.users)) {
         const cloudUserIds = new Set(cloudData.users.map(u => u.id || u.username));
@@ -267,11 +272,6 @@ document.addEventListener('alpine:init', () => {
         needsPushBackToCloud = true;
       }
 
-      // Sync Products
-      if (Array.isArray(cloudData.products) && cloudData.products.length > 0) {
-        this.products = cloudData.products;
-      }
-
       // Sync Settings
       if (cloudData.settings) {
         this.settings = { ...this.settings, ...cloudData.settings };
@@ -280,7 +280,7 @@ document.addEventListener('alpine:init', () => {
       this.saveStorage(false);
 
       if (needsPushBackToCloud) {
-        console.log("🔄 Local items found missing from Cloud. Merging up to Firebase...");
+        console.log("🔄 Syncing local users/orders up to Firebase...");
         this.pushToCloud();
       }
     },
@@ -319,12 +319,17 @@ document.addEventListener('alpine:init', () => {
 
     async pushToCloud() {
       const payload = {
-        products: this.products,
         users: this.users,
         orders: this.orders,
         settings: this.settings,
         lastSync: new Date().toISOString()
       };
+
+      // Only Admin (or when no products exist yet) can overwrite products in Cloud
+      if (this.isAdminMode || !window.hasSyncedProductsOnce) {
+        payload.products = this.products;
+        window.hasSyncedProductsOnce = true;
+      }
 
       if (window.isFirebaseActive && window.db) {
         try {
