@@ -282,7 +282,12 @@ document.addEventListener('alpine:init', () => {
 
     async syncWithCloud(showToastNotice = false) {
       try {
-        const response = await fetch('/api/store');
+        const headers = {};
+        if (this.isAdminMode || (this.currentUser && this.currentUser.role === 'admin')) {
+          headers['x-admin-auth'] = DEFAULT_ADMIN.password;
+        }
+
+        const response = await fetch('/api/store', { headers });
         if (response.ok) {
           const cloudData = await response.json();
           this.applyCloudData(cloudData);
@@ -298,6 +303,11 @@ document.addEventListener('alpine:init', () => {
     async pushToCloud(forcePushProducts = false) {
       if (this.isSyncingFromCloud) return;
 
+      const isUserAdmin = this.isAdminMode || (this.currentUser && this.currentUser.role === 'admin');
+
+      // Security: Unauthenticated / non-admin visitors cannot sync database root
+      if (!isUserAdmin && !forcePushProducts) return;
+
       const payload = {
         users: this.users,
         orders: this.orders,
@@ -306,15 +316,20 @@ document.addEventListener('alpine:init', () => {
       };
 
       // Push products if Admin mode, explicit force flag, or initial sync
-      if (this.isAdminMode || forcePushProducts || !window.hasSyncedProductsOnce) {
+      if (isUserAdmin || forcePushProducts || !window.hasSyncedProductsOnce) {
         payload.products = this.products;
         window.hasSyncedProductsOnce = true;
+      }
+
+      const headers = { 'Content-Type': 'application/json' };
+      if (isUserAdmin) {
+        headers['x-admin-auth'] = DEFAULT_ADMIN.password;
       }
 
       try {
         await fetch('/api/store/sync', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: headers,
           body: JSON.stringify(payload)
         });
         console.log("🗄️ Pushed to Server Database successfully.");
@@ -589,7 +604,7 @@ document.addEventListener('alpine:init', () => {
       this.showToast(`Ravi de vous revoir, ${foundUser.name} !`, "success");
     },
 
-    handleSignup() {
+    async handleSignup() {
       const { name, username, email, password } = this.signupForm;
 
       if (!name || !username || !email || !password) {
@@ -597,32 +612,30 @@ document.addEventListener('alpine:init', () => {
         return;
       }
 
-      // Check if username/email exists
-      const exists = this.users.some(u => u.username === username || u.email === email);
-      if (exists) {
-        this.showToast("Nom d'utilisateur ou e-mail déjà utilisé", "error");
-        return;
+      try {
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, username, email, password })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          this.showToast(data.error || "Erreur lors de la création du compte", "error");
+          return;
+        }
+
+        const newUser = data.user;
+        this.currentUser = newUser;
+        this.saveStorage(false);
+        this.isAdminMode = false;
+        this.isAuthOpen = false;
+        this.signupForm = { name: '', username: '', email: '', password: '' };
+        this.showToast(`Bienvenue, ${newUser.name} ! Votre compte est créé. 🎉`, "success");
+      } catch (err) {
+        console.warn("Register error", err);
+        this.showToast("Erreur réseau lors de la création du compte", "error");
       }
-
-      const newUser = {
-        id: "u_" + Date.now(),
-        name,
-        username,
-        email,
-        password,
-        role: "customer",
-        status: "active",
-        createdAt: new Date().toISOString().split('T')[0],
-        wishlist: []
-      };
-
-      this.users.push(newUser);
-      this.currentUser = newUser;
-      this.saveStorage();
-      this.isAdminMode = false;
-      this.isAuthOpen = false;
-      this.signupForm = { name: '', username: '', email: '', password: '' };
-      this.showToast("Compte créé avec succès ! Welcome to 9achech 🎉", "success");
     },
 
     logout() {
@@ -657,8 +670,11 @@ document.addEventListener('alpine:init', () => {
       this.saveStorage();
       this.pushToCloud(true);
 
-      // Call REST API delete endpoint
-      fetch('/api/users/' + userId, { method: 'DELETE' }).catch(e => console.warn(e));
+      // Call REST API delete endpoint with Admin authentication header
+      fetch('/api/users/' + userId, {
+        method: 'DELETE',
+        headers: { 'x-admin-auth': DEFAULT_ADMIN.password }
+      }).catch(e => console.warn(e));
 
       this.showToast("Utilisateur supprimé avec succès", "info");
       if (this.isAdminMode) {
