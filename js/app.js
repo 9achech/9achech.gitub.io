@@ -81,8 +81,9 @@ document.addEventListener('alpine:init', () => {
     init() {
       this.loadStorage();
 
-      // Initialize Firebase Real-Time Firestore Listener
-      this.initFirebaseRealtimeSync();
+      // Start Real-Time Server REST API Data Sync
+      this.syncWithCloud();
+      setInterval(() => this.syncWithCloud(), 4000);
 
       // Sync active cart & wishlist size selections
       this.$watch('cart', () => this.saveStorage());
@@ -206,33 +207,14 @@ document.addEventListener('alpine:init', () => {
       }
     },
 
-    // --- MULTI-DEVICE REAL-TIME CLOUD SYNC (FIREBASE FIRESTORE) ---
-    initFirebaseRealtimeSync() {
-      if (window.isFirebaseActive && window.db) {
-        try {
-          window.db.collection('store').doc('data').onSnapshot((doc) => {
-            if (doc.exists) {
-              const cloudData = doc.data();
-              this.applyCloudData(cloudData);
-            } else {
-              this.pushToCloud();
-            }
-          }, (err) => {
-            console.warn("Firestore snapshot listener error:", err);
-          });
-        } catch (e) {
-          console.warn("Firebase snapshot error:", e);
-        }
-      }
-    },
-
+    // --- MULTI-DEVICE REAL-TIME CLOUD SYNC (SERVER REST API & DATABASE) ---
     applyCloudData(cloudData) {
       if (!cloudData || typeof cloudData !== 'object') return;
 
       this.isSyncingFromCloud = true;
       let needsPushBackToCloud = false;
 
-      // Sync Products (Cloud/Admin is single source of truth for products)
+      // Sync Products
       if (Array.isArray(cloudData.products) && cloudData.products.length > 0) {
         this.products = JSON.parse(JSON.stringify(cloudData.products));
       } else if (!this.products || this.products.length === 0) {
@@ -251,7 +233,6 @@ document.addEventListener('alpine:init', () => {
           }
         });
 
-        // If local device has users missing in Cloud (e.g. account created on mobile before sync), push back
         this.users.forEach(u => {
           if (!cloudUserIds.has(u.id || u.username)) {
             needsPushBackToCloud = true;
@@ -287,7 +268,7 @@ document.addEventListener('alpine:init', () => {
         this.settings = { ...this.settings, ...cloudData.settings };
       }
 
-      // Force Alpine.js reactivity re-assignment for async Firestore snapshot updates
+      // Force Alpine.js reactivity re-assignment
       this.products = [...this.products];
       this.users = [...this.users];
       this.orders = [...this.orders];
@@ -299,24 +280,22 @@ document.addEventListener('alpine:init', () => {
       });
 
       if (needsPushBackToCloud) {
-        console.log("🔄 Syncing local users/orders up to Firebase...");
         this.pushToCloud();
       }
     },
 
     async syncWithCloud(showToastNotice = false) {
-      if (window.isFirebaseActive && window.db) {
-        try {
-          const docRef = await window.db.collection('store').doc('data').get();
-          if (docRef.exists) {
-            this.applyCloudData(docRef.data());
-            if (showToastNotice) {
-              this.showToast("Synchronisation Firebase Firestore réussie (PC ↔ Mobile) 🔥", "success");
-            }
+      try {
+        const response = await fetch('/api/store');
+        if (response.ok) {
+          const cloudData = await response.json();
+          this.applyCloudData(cloudData);
+          if (showToastNotice) {
+            this.showToast("Synchronisation Base de Données Serveur réussie ! 🗄️", "success");
           }
-        } catch (err) {
-          console.warn("Firebase manual sync error:", err);
         }
+      } catch (err) {
+        console.warn("Backend API sync fallback", err);
       }
     },
 
@@ -336,13 +315,15 @@ document.addEventListener('alpine:init', () => {
         window.hasSyncedProductsOnce = true;
       }
 
-      if (window.isFirebaseActive && window.db) {
-        try {
-          await window.db.collection('store').doc('data').set(payload, { merge: true });
-          console.log("🔥 Pushed to Firebase Firestore successfully.");
-        } catch (err) {
-          console.warn("Firebase push error:", err);
-        }
+      try {
+        await fetch('/api/store/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        console.log("🗄️ Pushed to Server Database successfully.");
+      } catch (err) {
+        console.warn("Server Database push error:", err);
       }
     },
 
