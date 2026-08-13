@@ -848,6 +848,8 @@ document.addEventListener('alpine:init', () => {
         isFeatured: product.isFeatured || false
       };
       this.isProductEditModalOpen = true;
+    },
+
     handleProductImageUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
