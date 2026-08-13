@@ -18,17 +18,17 @@
   <!-- Custom Glassmorphism Styles -->
   <link rel="stylesheet" href="css/styles.css">
 
-  <!-- Alpine.js CDN -->
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  
   <!-- Firebase SDK (Compat Mode for HTML/JS & Alpine.js) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-  <script src="js/firebase-config.js?v=v5_firebase"></script>
+  <script defer src="js/firebase-config.js?v=v6_fix"></script>
 
   <!-- Data & Logic Scripts -->
-  <script src="js/data.js?v=v5_firebase"></script>
-  <script src="js/app.js?v=v5_firebase"></script>
+  <script defer src="js/data.js?v=v6_fix"></script>
+  <script defer src="js/app.js?v=v6_fix"></script>
+
+  <!-- Alpine.js CDN (Loaded after app component definition) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="relative min-h-screen text-slate-100 flex flex-col justify-between selection:bg-purple-500 selection:text-white">
 
