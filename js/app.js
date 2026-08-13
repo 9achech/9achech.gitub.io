@@ -222,34 +222,49 @@ document.addEventListener('alpine:init', () => {
     applyCloudData(cloudData) {
       if (!cloudData || typeof cloudData !== 'object') return;
 
+      let needsPushBackToCloud = false;
+
       // Sync Users
       if (Array.isArray(cloudData.users)) {
-        const existingUserIds = new Set(this.users.map(u => u.id || u.username));
+        const cloudUserIds = new Set(cloudData.users.map(u => u.id || u.username));
         cloudData.users.forEach(u => {
-          if (!existingUserIds.has(u.id || u.username)) {
+          const idx = this.users.findIndex(localU => (localU.id && u.id && localU.id === u.id) || localU.username === u.username);
+          if (idx === -1) {
             this.users.push(u);
           } else {
-            const idx = this.users.findIndex(localU => (localU.id && u.id && localU.id === u.id) || localU.username === u.username);
-            if (idx !== -1) {
-              this.users[idx] = { ...this.users[idx], ...u };
-            }
+            this.users[idx] = { ...this.users[idx], ...u };
           }
         });
+
+        // If local device has users missing in Cloud (e.g. account created on mobile before sync), push back
+        this.users.forEach(u => {
+          if (!cloudUserIds.has(u.id || u.username)) {
+            needsPushBackToCloud = true;
+          }
+        });
+      } else if (this.users.length > 0) {
+        needsPushBackToCloud = true;
       }
 
       // Sync Orders
       if (Array.isArray(cloudData.orders)) {
-        const existingOrderIds = new Set(this.orders.map(o => o.id));
+        const cloudOrderIds = new Set(cloudData.orders.map(o => o.id));
         cloudData.orders.forEach(o => {
-          if (!existingOrderIds.has(o.id)) {
+          const existingOrd = this.orders.find(localO => localO.id === o.id);
+          if (!existingOrd) {
             this.orders.unshift(o);
-          } else {
-            const localOrd = this.orders.find(localO => localO.id === o.id);
-            if (localOrd && localOrd.status !== o.status) {
-              localOrd.status = o.status;
-            }
+          } else if (existingOrd.status !== o.status) {
+            existingOrd.status = o.status;
           }
         });
+
+        this.orders.forEach(o => {
+          if (!cloudOrderIds.has(o.id)) {
+            needsPushBackToCloud = true;
+          }
+        });
+      } else if (this.orders.length > 0) {
+        needsPushBackToCloud = true;
       }
 
       // Sync Products
@@ -263,6 +278,11 @@ document.addEventListener('alpine:init', () => {
       }
 
       this.saveStorage(false);
+
+      if (needsPushBackToCloud) {
+        console.log("🔄 Local items found missing from Cloud. Merging up to Firebase...");
+        this.pushToCloud();
+      }
     },
 
     async syncWithCloud(showToastNotice = false) {
