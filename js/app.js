@@ -287,6 +287,11 @@ document.addEventListener('alpine:init', () => {
         this.settings = { ...this.settings, ...cloudData.settings };
       }
 
+      // Force Alpine.js reactivity re-assignment for async Firestore snapshot updates
+      this.products = [...this.products];
+      this.users = [...this.users];
+      this.orders = [...this.orders];
+
       this.saveStorage(false);
 
       this.$nextTick(() => {
