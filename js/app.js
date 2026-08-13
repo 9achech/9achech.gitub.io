@@ -130,6 +130,10 @@ document.addEventListener('alpine:init', () => {
         this.products = JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
       }
 
+      if (!Array.isArray(this.products) || this.products.length === 0) {
+        this.products = JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
+      }
+
       // Ensure all products have stockQuantity field
       this.products.forEach(p => {
         if (p.stockQuantity === undefined) {
@@ -231,6 +235,8 @@ document.addEventListener('alpine:init', () => {
       // Sync Products (Cloud/Admin is single source of truth for products)
       if (Array.isArray(cloudData.products) && cloudData.products.length > 0) {
         this.products = JSON.parse(JSON.stringify(cloudData.products));
+      } else if (!this.products || this.products.length === 0) {
+        this.products = JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
       }
 
       // Sync Users
